@@ -1,0 +1,421 @@
+/* components/official-schedule-board.module.css */
+
+.container {
+  background: #ffffff;
+  color: #111827;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  padding: 24px;
+  margin-bottom: 28px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.controlsBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.filterGroup {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.filterLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.filterButton {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+}
+
+.filterButton:hover {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.filterButtonActive {
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid #1e40af;
+  background: #1e40af;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2);
+}
+
+.teacherSelect {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  font-size: 12px;
+  color: #374151;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.actionGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.printButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #047857;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.printButton:hover {
+  background: #065f46;
+}
+
+/* Printable Document Sheet */
+.documentSheet {
+  background: #ffffff;
+  padding: 16px 8px;
+  margin: 0 auto;
+}
+
+.documentHeader {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.documentTitle {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+.schoolTitle {
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  margin: 0 0 4px 0;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+.periodTitle {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin: 0;
+  color: #000000;
+  text-transform: uppercase;
+}
+
+/* Table Wrap for Horizontal Scroll on Mobile */
+.tableWrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+  border: 1px solid #000000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.scheduleTable {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 11px;
+  text-align: center;
+  color: #000000;
+  background: #ffffff;
+}
+
+.scheduleTable th,
+.scheduleTable td {
+  border: 1px solid #000000;
+  padding: 6px 3px;
+  vertical-align: middle;
+  line-height: 1.25;
+}
+
+.scheduleTable thead th {
+  background: #ffffff;
+  font-weight: 800;
+  color: #000000;
+}
+
+.headerTop {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.headerClass {
+  font-size: 11px;
+  font-weight: 800;
+  width: 50px;
+}
+
+.colJam {
+  width: 44px;
+  font-weight: 700;
+}
+
+.colWaktu {
+  width: 82px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.breakRow {
+  background: #ffffff;
+  font-style: italic;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  font-size: 12px;
+  height: 24px;
+}
+
+.subjectCell {
+  font-weight: 700;
+  font-size: 11px;
+  transition: transform 0.1s, box-shadow 0.1s, opacity 0.15s;
+  cursor: default;
+  position: relative;
+  user-select: none;
+}
+
+.subjectCell:hover {
+  filter: brightness(0.94);
+  box-shadow: inset 0 0 0 1.5px #000000;
+}
+
+.highlightedCell {
+  outline: 2.5px solid #d97706 !important;
+  outline-offset: -2.5px;
+  font-weight: 900 !important;
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.6) !important;
+  z-index: 2;
+  position: relative;
+}
+
+.dimmedCell {
+  opacity: 0.35 !important;
+}
+
+/* Legend Section */
+.legendSection {
+  margin-top: 18px;
+  margin-bottom: 24px;
+}
+
+.legendHeader {
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  color: #000000;
+}
+
+.legendGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+  gap: 16px;
+}
+
+.legendTable {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid #000000;
+  font-size: 11px;
+  color: #000000;
+}
+
+.legendTable th {
+  background: #f3f4f6;
+  border: 1px solid #000000;
+  padding: 5px 6px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.legendTable td {
+  border: 1px solid #000000;
+  padding: 4px 6px;
+  vertical-align: middle;
+}
+
+.legendCode {
+  width: 48px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.legendName {
+  font-weight: 600;
+  width: 180px;
+}
+
+.legendSubject {
+  font-weight: 600;
+}
+
+/* Signatures & Stamp */
+.signatureSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-top: 36px;
+  padding: 0 40px 10px;
+}
+
+.signatureBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  min-width: 220px;
+}
+
+.signRole {
+  font-size: 13px;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 6px;
+}
+
+.signArea {
+  position: relative;
+  width: 200px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stampSvg {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100px;
+  height: 90px;
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.signatureSvg {
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  width: 150px;
+  height: 70px;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.signName {
+  font-size: 13px;
+  font-weight: 800;
+  color: #000000;
+  border-bottom: 1.5px solid #000000;
+  padding-bottom: 2px;
+  margin-top: 4px;
+}
+
+/* Tooltip */
+.cellTooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111827;
+  color: #ffffff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 20;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  margin-bottom: 4px;
+}
+
+/* Print CSS */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .documentSheet,
+  .documentSheet * {
+    visibility: visible;
+  }
+
+  .documentSheet {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 10px;
+    background: #ffffff;
+  }
+
+  .controlsBar {
+    display: none !important;
+  }
+
+  .tableWrap {
+    overflow: visible !important;
+    border: 1px solid #000000;
+  }
+
+  .scheduleTable {
+    width: 100% !important;
+    min-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  .legendSection {
+    page-break-inside: avoid;
+  }
+
+  .signatureSection {
+    page-break-inside: avoid;
+    padding: 0 20px;
+  }
+
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+}
+

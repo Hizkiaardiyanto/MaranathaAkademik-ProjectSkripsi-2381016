@@ -6,9 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:legacy": "node scripts/seed-legacy-data.mjs",
+    "normalize:classes": "node scripts/normalize-class-schedules.mjs",
+    "migrate:student-registration": "node scripts/migrate-student-registration-profile.mjs"
   },
   "dependencies": {
+    "mysql2": "^3.24.5",
     "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8"

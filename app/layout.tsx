@@ -1,15 +1,20 @@
 import type { Metadata } from "next";
+import { SessionGuard } from "../components/session-guard";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EduNusa Akademik",
-  description: "Dashboard sekolah modern berbasis Next.js",
+  title: "SD - SMP Kristen Maranatha",
+  description: "Sistem informasi akademik SD - SMP Kristen Maranatha",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="id">
-      <body>{children}</body>
+      <body>
+        <SessionGuard>{children}</SessionGuard>
+      </body>
     </html>
   );
 }
