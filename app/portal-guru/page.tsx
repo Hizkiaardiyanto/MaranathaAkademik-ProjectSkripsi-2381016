@@ -146,16 +146,39 @@ export default function TeacherPortalPage() {
       <aside
         className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
       >
-        <Link href="/portal-guru" className={styles.studentBrand} title="SD - SMP Maranatha">
-          <span className={styles.studentBrandMark}>M</span>
-          {!isCollapsed && (
-            <span>
-              SD - SMP <b>Maranatha</b>
-            </span>
-          )}
-        </Link>
+        <div className={styles.brandRow}>
+          <Link href="/portal-guru" className={styles.studentBrand} title="SD - SMP Maranatha">
+            <span className={styles.studentBrandMark}>M</span>
+            {(!isCollapsed || isMobileOpen) && (
+              <span>
+                SD - SMP <b>Maranatha</b>
+              </span>
+            )}
+          </Link>
+          {isMobileOpen ? (
+            <button
+              type="button"
+              className={styles.mobileCloseDrawerBtn}
+              onClick={closeMobile}
+              title="Tutup menu"
+              aria-label="Tutup menu"
+            >
+              ×
+            </button>
+          ) : !isCollapsed ? (
+            <button
+              type="button"
+              className={styles.sidebarCollapseBtn}
+              onClick={toggleSidebar}
+              title="Ciutkan menu sidebar (Collapse)"
+              aria-label="Ciutkan menu sidebar"
+            >
+              «
+            </button>
+          ) : null}
+        </div>
 
-        {!isCollapsed && (
+        {(!isCollapsed || isMobileOpen) && (
           <label className={styles.studentSearch} style={{ marginBottom: "12px" }}>
             <span aria-hidden="true">⌕</span>
             <input
@@ -177,7 +200,7 @@ export default function TeacherPortalPage() {
           </label>
         )}
 
-        {!isCollapsed && <p className={styles.studentMenuLabel}>MENU GURU</p>}
+        {(!isCollapsed || isMobileOpen) && <p className={styles.studentMenuLabel}>MENU GURU</p>}
 
         <nav className={styles.studentNav} aria-label="Navigasi portal guru">
           {filteredMenu.map(([label, href, icon]) => (
@@ -186,13 +209,13 @@ export default function TeacherPortalPage() {
               href={href}
               className={`${styles.studentNavItem} ${href === "/portal-guru" ? styles.studentNavActive : ""}`}
               data-tooltip={label}
-              title={isCollapsed ? label : undefined}
+              title={isCollapsed && !isMobileOpen ? label : undefined}
               onClick={() => {
                 if (isMobileOpen) closeMobile();
               }}
             >
               <span aria-hidden="true">{icon}</span>
-              {!isCollapsed && (
+              {(!isCollapsed || isMobileOpen) && (
                 <>
                   <span className={styles.studentNavLabel}>{label}</span>
                   <span className={styles.studentNavArrow} aria-hidden="true">
@@ -202,7 +225,7 @@ export default function TeacherPortalPage() {
               )}
             </Link>
           ))}
-          {filteredMenu.length === 0 && !isCollapsed && (
+          {filteredMenu.length === 0 && (!isCollapsed || isMobileOpen) && (
             <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
           )}
         </nav>
@@ -211,7 +234,7 @@ export default function TeacherPortalPage() {
           <span className={styles.studentHelpIcon} title="Butuh bantuan?">
             ?
           </span>
-          {!isCollapsed && (
+          {(!isCollapsed || isMobileOpen) && (
             <span>
               <b>Butuh bantuan?</b>
               <small>Hubungi administrasi sekolah</small>
@@ -222,27 +245,27 @@ export default function TeacherPortalPage() {
           type="button"
           className={styles.studentLogout}
           onClick={logout}
-          title={isCollapsed ? "Keluar" : undefined}
+          title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
         >
           <span aria-hidden="true">↪</span>
-          {!isCollapsed && " Keluar"}
+          {(!isCollapsed || isMobileOpen) && " Keluar"}
         </button>
       </aside>
 
       <main className={styles.studentMain}>
         <header className={styles.studentTopbar}>
-          <div className={styles.studentTopbarBrand}>
+          <div className={styles.headerBrandBlock}>
+            <span className={styles.headerBrandLogo}>M</span>
+            <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
             <button
               type="button"
-              className={styles.portalHamburgerBtn}
+              className={styles.headerHamburgerBtn}
               onClick={toggleSidebar}
               aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
               title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
             >
               ☰
             </button>
-            <span className={styles.studentBrandMark}>M</span>
-            <span>Portal Guru</span>
           </div>
           <div className={styles.studentProfile}>
             <span className={styles.studentAvatar}>{initials}</span>

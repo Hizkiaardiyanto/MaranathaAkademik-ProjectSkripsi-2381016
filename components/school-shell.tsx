@@ -159,15 +159,19 @@ export function SchoolShell({
         className={`${styles.mainContent} ${isCollapsed ? styles.mainContentCollapsed : ""}`}
       >
         <header className={styles.topbar}>
-          <button
-            type="button"
-            className={styles.hamburgerBtn}
-            onClick={toggleSidebar}
-            aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
-            title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
-          >
-            ☰
-          </button>
+          <div className={styles.headerBrandBlock}>
+            <span className={styles.headerBrandLogo}>M</span>
+            <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
+            <button
+              type="button"
+              className={styles.headerHamburgerBtn}
+              onClick={toggleSidebar}
+              aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
+              title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
+            >
+              ☰
+            </button>
+          </div>
 
           <div className={styles.breadcrumb}>
             <span>{title}</span>

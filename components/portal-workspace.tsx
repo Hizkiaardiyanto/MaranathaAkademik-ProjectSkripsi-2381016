@@ -247,7 +247,7 @@ export function PortalWorkspace({
               </span>
             )}
           </Link>
-          {isMobileOpen && (
+          {isMobileOpen ? (
             <button
               type="button"
               className={styles.mobileCloseDrawerBtn}
@@ -257,7 +257,17 @@ export function PortalWorkspace({
             >
               ×
             </button>
-          )}
+          ) : !isCollapsed ? (
+            <button
+              type="button"
+              className={styles.sidebarCollapseBtn}
+              onClick={toggleSidebar}
+              title="Ciutkan menu sidebar (Collapse)"
+              aria-label="Ciutkan menu sidebar"
+            >
+              «
+            </button>
+          ) : null}
         </div>
 
         {(!isCollapsed || isMobileOpen) && (
@@ -347,18 +357,18 @@ export function PortalWorkspace({
 
       <main className={styles.studentMain}>
         <header className={styles.studentTopbar}>
-          <div className={styles.studentTopbarBrand}>
+          <div className={styles.headerBrandBlock}>
+            <span className={styles.headerBrandLogo}>M</span>
+            <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
             <button
               type="button"
-              className={styles.portalHamburgerBtn}
+              className={styles.headerHamburgerBtn}
               onClick={toggleSidebar}
               aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
               title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
             >
               ☰
             </button>
-            <span className={styles.studentBrandMark}>M</span>
-            <span>Portal {role}</span>
           </div>
           <div className={styles.studentTopbarActions}>
             <div className={styles.studentProfile}>
