@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { sessionMarkerKey } from "../../lib/browser-session";
 import styles from "../page.module.css";
 import { SchoolVisionMission } from "../../components/school-vision-mission";
+import { OfficialScheduleBoard } from "../../components/official-schedule-board";
 import { getApiErrorMessage } from "../../lib/api-error";
 
 type TeacherSession = { name: string; email: string; subject: string };
@@ -27,6 +28,7 @@ export default function TeacherPortalPage() {
   const [classes, setClasses] = useState<PortalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [dashboardScheduleMode, setDashboardScheduleMode] = useState<"official" | "list">("official");
 
   useEffect(() => {
     let active = true;
@@ -218,21 +220,60 @@ export default function TeacherPortalPage() {
             </Link>
           </section>
 
-          <div className={styles.studentInfoGrid}>
-            <section className={styles.studentPanel}>
-              <div className={styles.studentPanelHeading}>
-                <div>
-                  <span aria-hidden="true">▦</span>
-                  <h1>Jadwal Mengajar Saya</h1>
-                </div>
-                <Link
-                  href="/portal-guru/jadwal"
-                  className={styles.studentTextLink}
-                >
-                  Semua jadwal →
-                </Link>
+          <section className={styles.studentPanel} style={{ marginBottom: "20px" }}>
+            <div className={styles.studentPanelHeading}>
+              <div>
+                <span aria-hidden="true">▦</span>
+                <h1>Jadwal Pelajaran &amp; Mengajar Guru</h1>
               </div>
-              <div className={styles.studentPanelBody}>
+              <Link
+                href="/portal-guru/jadwal"
+                className={styles.studentTextLink}
+              >
+                Buka jadwal lengkap →
+              </Link>
+            </div>
+            <div className={styles.studentPanelBody}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "18px" }}>
+                <button
+                  type="button"
+                  style={{
+                    padding: "7px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    background: dashboardScheduleMode === "official" ? "#1e40af" : "#f1f5f9",
+                    color: dashboardScheduleMode === "official" ? "#ffffff" : "#475569",
+                    transition: "all 0.15s",
+                  }}
+                  onClick={() => setDashboardScheduleMode("official")}
+                >
+                  ▦ Matriks Dokumen Resmi (Sesuai Gambar)
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    padding: "7px 16px",
+                    borderRadius: "6px",
+                    border: "none",
+                    fontWeight: 700,
+                    fontSize: "12px",
+                    cursor: "pointer",
+                    background: dashboardScheduleMode === "list" ? "#1e40af" : "#f1f5f9",
+                    color: dashboardScheduleMode === "list" ? "#ffffff" : "#475569",
+                    transition: "all 0.15s",
+                  }}
+                  onClick={() => setDashboardScheduleMode("list")}
+                >
+                  ▤ Daftar Mengajar Saya
+                </button>
+              </div>
+
+              {dashboardScheduleMode === "official" ? (
+                <OfficialScheduleBoard role="teacher" userName={teacher?.name} />
+              ) : (
                 <div className={styles.studentTableWrap}>
                   <table className={styles.studentScheduleTable}>
                     <thead>
@@ -271,8 +312,11 @@ export default function TeacherPortalPage() {
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </section>
+              )}
+            </div>
+          </section>
+
+          <div className={styles.studentInfoGrid}>
 
             <section className={styles.studentPanel}>
               <div className={styles.studentPanelHeading}>
