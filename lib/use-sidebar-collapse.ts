@@ -17,6 +17,14 @@ export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
     } catch {
       // LocalStorage might be disabled in private mode
     }
+
+    const handleResize = () => {
+      if (typeof window !== "undefined" && window.innerWidth > 820) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, [storageKey]);
 
   const toggleSidebar = useCallback(() => {

@@ -238,16 +238,29 @@ export function PortalWorkspace({
       <aside
         className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
       >
-        <Link href={base} className={styles.studentBrand} title="SD - SMP Maranatha">
-          <span className={styles.studentBrandMark}>M</span>
-          {!isCollapsed && (
-            <span>
-              SD - SMP <b>Maranatha</b>
-            </span>
+        <div className={styles.brandRow}>
+          <Link href={base} className={styles.studentBrand} title="SD - SMP Maranatha">
+            <span className={styles.studentBrandMark}>M</span>
+            {(!isCollapsed || isMobileOpen) && (
+              <span>
+                SD - SMP <b>Maranatha</b>
+              </span>
+            )}
+          </Link>
+          {isMobileOpen && (
+            <button
+              type="button"
+              className={styles.mobileCloseDrawerBtn}
+              onClick={closeMobile}
+              title="Tutup menu"
+              aria-label="Tutup menu"
+            >
+              ×
+            </button>
           )}
-        </Link>
+        </div>
 
-        {!isCollapsed && (
+        {(!isCollapsed || isMobileOpen) && (
           <label className={styles.studentSearch} style={{ marginBottom: "12px" }}>
             <span aria-hidden="true">⌕</span>
             <input
@@ -269,7 +282,7 @@ export function PortalWorkspace({
           </label>
         )}
 
-        {!isCollapsed && (
+        {(!isCollapsed || isMobileOpen) && (
           <p className={styles.studentMenuLabel}>
             {isTeacher ? "MENU GURU" : "MENU SISWA"}
           </p>
@@ -285,13 +298,13 @@ export function PortalWorkspace({
               href={href}
               className={`${styles.studentNavItem} ${href === `${base}/${feature}` ? styles.studentNavActive : ""}`}
               data-tooltip={label}
-              title={isCollapsed ? label : undefined}
+              title={isCollapsed && !isMobileOpen ? label : undefined}
               onClick={() => {
                 if (isMobileOpen) closeMobile();
               }}
             >
               <span aria-hidden="true">{icon}</span>
-              {!isCollapsed && (
+              {(!isCollapsed || isMobileOpen) && (
                 <>
                   <span className={styles.studentNavLabel}>{label}</span>
                   <span className={styles.studentNavArrow} aria-hidden="true">
@@ -301,7 +314,7 @@ export function PortalWorkspace({
               )}
             </Link>
           ))}
-          {filteredMenu.length === 0 && !isCollapsed && (
+          {filteredMenu.length === 0 && (!isCollapsed || isMobileOpen) && (
             <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
           )}
         </nav>
@@ -310,7 +323,7 @@ export function PortalWorkspace({
           <span className={styles.studentHelpIcon} title="Butuh bantuan?">
             ?
           </span>
-          {!isCollapsed && (
+          {(!isCollapsed || isMobileOpen) && (
             <span>
               <b>Butuh bantuan?</b>
               <small>
@@ -325,10 +338,10 @@ export function PortalWorkspace({
           type="button"
           className={styles.studentLogout}
           onClick={logout}
-          title={isCollapsed ? "Keluar" : undefined}
+          title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
         >
           <span aria-hidden="true">↪</span>
-          {!isCollapsed && " Keluar"}
+          {(!isCollapsed || isMobileOpen) && " Keluar"}
         </button>
       </aside>
 

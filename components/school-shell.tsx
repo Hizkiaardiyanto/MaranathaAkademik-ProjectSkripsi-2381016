@@ -64,9 +64,19 @@ export function SchoolShell({
         <div className={styles.brandRow}>
           <Link href="/" className={styles.brand} title="SD - SMP Kristen Maranatha">
             <span className={styles.brandMark}>M</span>
-            {!isCollapsed && <span>SD - SMP Kristen Maranatha</span>}
+            {(!isCollapsed || isMobileOpen) && <span>SD - SMP Kristen Maranatha</span>}
           </Link>
-          {!isCollapsed && (
+          {isMobileOpen ? (
+            <button
+              type="button"
+              className={styles.mobileCloseDrawerBtn}
+              onClick={closeMobile}
+              title="Tutup menu"
+              aria-label="Tutup menu"
+            >
+              ×
+            </button>
+          ) : !isCollapsed ? (
             <button
               type="button"
               className={styles.sidebarCollapseBtn}
@@ -76,10 +86,10 @@ export function SchoolShell({
             >
               «
             </button>
-          )}
+          ) : null}
         </div>
 
-        {!isCollapsed && (
+        {(!isCollapsed || isMobileOpen) && (
           <label className={styles.adminMenuSearch}>
             <span aria-hidden="true">⌕</span>
             <input
@@ -101,7 +111,7 @@ export function SchoolShell({
           </label>
         )}
 
-        {!isCollapsed && <p className={styles.menuLabel}>MENU UTAMA</p>}
+        {(!isCollapsed || isMobileOpen) && <p className={styles.menuLabel}>MENU UTAMA</p>}
 
         <nav className={styles.navMenu}>
           {filteredNavItems.map(({ label, href, icon }) => (
@@ -111,13 +121,13 @@ export function SchoolShell({
               className={`${styles.navItem} ${activeItem === label ? styles.active : ""}`}
               aria-current={activeItem === label ? "page" : undefined}
               data-tooltip={label}
-              title={isCollapsed ? label : undefined}
+              title={isCollapsed && !isMobileOpen ? label : undefined}
               onClick={() => {
                 if (isMobileOpen) closeMobile();
               }}
             >
               <i>{icon}</i>
-              {!isCollapsed && (
+              {(!isCollapsed || isMobileOpen) && (
                 <>
                   <span className={styles.navLabel}>{label}</span>
                   <span className={styles.navArrow} aria-hidden="true">
@@ -127,7 +137,7 @@ export function SchoolShell({
               )}
             </Link>
           ))}
-          {filteredNavItems.length === 0 && !isCollapsed && (
+          {filteredNavItems.length === 0 && (!isCollapsed || isMobileOpen) && (
             <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
           )}
         </nav>
@@ -136,7 +146,7 @@ export function SchoolShell({
           <div className={styles.supportIcon} title="Butuh bantuan?">
             ?
           </div>
-          {!isCollapsed && (
+          {(!isCollapsed || isMobileOpen) && (
             <div>
               <b>Butuh bantuan?</b>
               <small>Hubungi administrator</small>
