@@ -6,24 +6,56 @@
 .sidebar {
   width: 250px;
   background: #fff;
-  padding: 28px 16px;
+  padding: 24px 14px;
   display: flex;
   flex-direction: column;
   position: fixed;
   inset: 0 auto 0 0;
-  z-index: 3;
+  z-index: 10;
   border-right: 1px solid #eaf0f7;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebarCollapsed {
+  width: 72px;
+  padding: 24px 8px;
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  padding: 0 4px;
+  gap: 8px;
+}
+
+.sidebarCollapsed .brandRow {
+  justify-content: center;
+  padding: 0;
+  margin-bottom: 16px;
 }
 
 .brand {
   font:
-    800 15px "Plus Jakarta Sans",
+    800 14px "Plus Jakarta Sans",
     sans-serif;
   color: #172b52;
   text-decoration: none;
-  padding: 0 12px 34px;
+  padding: 0;
   letter-spacing: 0;
   line-height: 1.35;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.sidebarCollapsed .brand {
+  padding: 0;
+  justify-content: center;
 }
 
 .brand span span {
@@ -33,16 +65,93 @@
 .brandMark {
   display: inline-grid;
   place-items: center;
-  width: 29px;
-  height: 29px;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
   background: #3874ed;
   color: #fff;
   border-radius: 9px;
-  margin-right: 7px;
   font:
     800 18px "Plus Jakarta Sans",
     sans-serif;
   letter-spacing: 0;
+}
+
+.sidebarCollapseBtn {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  border-radius: 6px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sidebarCollapseBtn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.adminMenuSearch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  margin: 0 0 16px;
+  padding: 0 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 12px;
+  transition: all 0.15s ease;
+}
+
+.adminMenuSearch:focus-within {
+  border-color: #3874ed;
+  background: #ffffff;
+  box-shadow: 0 0 0 2px rgba(56, 116, 237, 0.1);
+}
+
+.adminMenuSearch input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 11px;
+  color: #1e293b;
+}
+
+.adminMenuSearch input::placeholder {
+  color: #94a3b8;
+}
+
+.searchClearBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.searchClearBtn:hover {
+  color: #475569;
+}
+
+.menuEmptyNotice {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 12px 6px;
+  margin: 0;
 }
 
 .menuLabel {
@@ -62,21 +171,42 @@
 .navItem {
   background: none;
   text-align: left;
-  padding: 11px 12px;
+  padding: 10px 12px;
   border-radius: 9px;
   color: #64728a;
   font-weight: 600;
   font-size: 13px;
   border: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+.navLabel {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.navArrow {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .navItem i {
   font-style: normal;
-  display: inline-block;
-  width: 25px;
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
   font-size: 18px;
-  vertical-align: middle;
   color: #8796ac;
+  flex-shrink: 0;
 }
 
 .navItem.active,
@@ -89,6 +219,48 @@
   color: #2e66db;
 }
 
+.sidebarCollapsed .navItem {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebarCollapsed .navItem i {
+  margin: 0 auto;
+  width: auto;
+  font-size: 20px;
+}
+
+.sidebarCollapsed .navItem:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 68px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e293b;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.sidebarCollapsed .navItem:hover::before {
+  content: "";
+  position: absolute;
+  left: 62px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 6px 5px 0;
+  border-style: solid;
+  border-color: transparent #1e293b transparent transparent;
+  z-index: 1000;
+  pointer-events: none;
+}
+
 .sidebarBottom {
   margin-top: auto;
   background: #f2f6ff;
@@ -98,6 +270,12 @@
   gap: 9px;
   align-items: center;
   font-size: 11px;
+}
+
+.sidebarCollapsed .sidebarBottom {
+  padding: 10px 0;
+  justify-content: center;
+  background: transparent;
 }
 
 .sidebarBottom small {
@@ -115,11 +293,23 @@
   display: grid;
   place-items: center;
   font-weight: bold;
+  flex-shrink: 0;
+}
+
+.sidebarCollapsed .supportIcon {
+  margin: 0 auto;
 }
 
 .mainContent {
   margin-left: 250px;
   width: calc(100% - 250px);
+  min-width: 0;
+  transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mainContentCollapsed {
+  margin-left: 72px;
+  width: calc(100% - 72px);
 }
 
 .topbar {
@@ -217,6 +407,70 @@
 
 .hamburger {
   display: none;
+}
+
+.hamburgerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  background: #198caf;
+  color: #ffffff;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 19px;
+  margin-right: 14px;
+  flex-shrink: 0;
+  transition: all 0.18s ease-in-out;
+  box-shadow: 0 2px 4px rgba(25, 140, 175, 0.2);
+}
+
+.hamburgerBtn:hover {
+  background: #14728f;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(25, 140, 175, 0.3);
+}
+
+.hamburgerBtn:active {
+  transform: translateY(0);
+}
+
+.portalHamburgerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: #198caf;
+  color: #ffffff;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 18px;
+  margin-right: 12px;
+  flex-shrink: 0;
+  transition: all 0.18s ease-in-out;
+  box-shadow: 0 2px 4px rgba(25, 140, 175, 0.2);
+}
+
+.portalHamburgerBtn:hover {
+  background: #14728f;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(25, 140, 175, 0.3);
+}
+
+.portalHamburgerBtn:active {
+  transform: translateY(0);
+}
+
+.sidebarBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  z-index: 99;
 }
 
 .page {
@@ -1639,8 +1893,88 @@
   height: 100vh;
   padding: 0 12px 14px;
   overflow-y: auto;
+  overflow-x: hidden;
   background: #fff;
   border-right: 1px solid var(--student-line);
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), flex-basis 0.25s cubic-bezier(0.4, 0, 0.2, 1), padding 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.studentSidebarCollapsed {
+  flex: 0 0 68px !important;
+  width: 68px !important;
+  padding: 0 8px 14px !important;
+}
+
+.studentSidebarCollapsed .studentBrand {
+  justify-content: center;
+  padding: 0;
+  margin: 0 -8px 12px;
+}
+
+.studentSidebarCollapsed .studentBrandMark {
+  margin: 0 auto;
+}
+
+.studentSidebarCollapsed .studentNavItem {
+  justify-content: center;
+  padding: 10px 0;
+  position: relative;
+}
+
+.studentSidebarCollapsed .studentNavItem > span:first-child {
+  margin: 0 auto;
+  font-size: 18px;
+}
+
+.studentSidebarCollapsed .studentNavItem:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 64px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #1e293b;
+  color: #ffffff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+}
+
+.studentSidebarCollapsed .studentNavItem:hover::before {
+  content: "";
+  position: absolute;
+  left: 58px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-width: 5px 6px 5px 0;
+  border-style: solid;
+  border-color: transparent #1e293b transparent transparent;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.studentSidebarCollapsed .studentSidebarBottom {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.studentSidebarCollapsed .studentSidebarBottom .studentHelpIcon {
+  margin: 0 auto;
+}
+
+.studentSidebarCollapsed .studentLogout {
+  justify-content: center;
+  padding: 10px 0;
+  font-size: 0;
+}
+
+.studentSidebarCollapsed .studentLogout span {
+  font-size: 16px;
+  margin: 0 auto;
 }
 
 .studentBrand {
@@ -2367,6 +2701,42 @@
   .studentSidebarBottom,
   .studentLogout {
     display: none;
+  }
+
+  .sidebarMobileOpen {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 260px !important;
+    z-index: 100 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+  }
+
+  .studentSidebarMobileOpen {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    width: 260px !important;
+    z-index: 100 !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: #ffffff !important;
+  }
+
+  .studentSidebarMobileOpen .studentMenuLabel,
+  .studentSidebarMobileOpen .studentSidebarBottom,
+  .studentSidebarMobileOpen .studentLogout {
+    display: flex !important;
+  }
+
+  .studentSidebarMobileOpen .studentNav {
+    grid-template-columns: 1fr !important;
   }
 
   .studentNav {

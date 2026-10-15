@@ -7,6 +7,7 @@ import { sessionMarkerKey } from "../lib/browser-session";
 import styles from "../app/page.module.css";
 import { SchoolVisionMission } from "./school-vision-mission";
 import { OfficialScheduleBoard } from "./official-schedule-board";
+import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
 
 type PortalRole = "Siswa" | "Guru";
 type PortalRecord = { id: string; [key: string]: string | number };
@@ -125,6 +126,13 @@ export function PortalWorkspace({
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [scheduleViewMode, setScheduleViewMode] = useState<"official" | "list">("official");
+  const { isCollapsed, isMobileOpen, toggleSidebar, closeMobile } =
+    useSidebarCollapse(
+      isTeacher
+        ? "maranatha_teacher_sidebar_collapsed"
+        : "maranatha_student_sidebar_collapsed",
+    );
+  const [menuSearch, setMenuSearch] = useState("");
   const isStudentList = resource === "students";
   const tableResource = isStudentList ? "students" : resource;
   const headers = columns[tableResource] || columns.schedules;
@@ -213,52 +221,129 @@ export function PortalWorkspace({
     }
   }
 
+  const filteredMenu = menu.filter(([label]) =>
+    label.toLowerCase().includes(menuSearch.trim().toLowerCase()),
+  );
+
   return (
     <div className={styles.studentDashboard}>
-      <aside className={styles.studentSidebar}>
-        <Link href={base} className={styles.studentBrand}>
+      {isMobileOpen && (
+        <div
+          className={styles.sidebarBackdrop}
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
+      >
+        <Link href={base} className={styles.studentBrand} title="SD - SMP Maranatha">
           <span className={styles.studentBrandMark}>M</span>
-          <span>
-            SD - SMP <b>Maranatha</b>
-          </span>
+          {!isCollapsed && (
+            <span>
+              SD - SMP <b>Maranatha</b>
+            </span>
+          )}
         </Link>
-        <p className={styles.studentMenuLabel}>
-          {isTeacher ? "MENU GURU" : "MENU SISWA"}
-        </p>
+
+        {!isCollapsed && (
+          <label className={styles.studentSearch} style={{ marginBottom: "12px" }}>
+            <span aria-hidden="true">⌕</span>
+            <input
+              value={menuSearch}
+              onChange={(e) => setMenuSearch(e.target.value)}
+              placeholder="Cari menu (min. 2 karakter)..."
+              aria-label="Cari menu"
+            />
+            {menuSearch && (
+              <button
+                type="button"
+                onClick={() => setMenuSearch("")}
+                className={styles.searchClearBtn}
+                title="Hapus pencarian"
+              >
+                ×
+              </button>
+            )}
+          </label>
+        )}
+
+        {!isCollapsed && (
+          <p className={styles.studentMenuLabel}>
+            {isTeacher ? "MENU GURU" : "MENU SISWA"}
+          </p>
+        )}
+
         <nav
           className={styles.studentNav}
           aria-label={`Navigasi portal ${isTeacher ? "guru" : "siswa"}`}
         >
-          {menu.map(([label, href, icon]) => (
+          {filteredMenu.map(([label, href, icon]) => (
             <Link
               key={href}
               href={href}
               className={`${styles.studentNavItem} ${href === `${base}/${feature}` ? styles.studentNavActive : ""}`}
+              data-tooltip={label}
+              title={isCollapsed ? label : undefined}
+              onClick={() => {
+                if (isMobileOpen) closeMobile();
+              }}
             >
               <span aria-hidden="true">{icon}</span>
-              {label}
+              {!isCollapsed && (
+                <>
+                  <span className={styles.studentNavLabel}>{label}</span>
+                  <span className={styles.studentNavArrow} aria-hidden="true">
+                    ›
+                  </span>
+                </>
+              )}
             </Link>
           ))}
+          {filteredMenu.length === 0 && !isCollapsed && (
+            <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
+          )}
         </nav>
+
         <div className={styles.studentSidebarBottom}>
-          <span className={styles.studentHelpIcon}>?</span>
-          <span>
-            <b>Butuh bantuan?</b>
-            <small>
-              {isTeacher
-                ? "Hubungi administrasi sekolah"
-                : "Hubungi wali kelas"}
-            </small>
+          <span className={styles.studentHelpIcon} title="Butuh bantuan?">
+            ?
           </span>
+          {!isCollapsed && (
+            <span>
+              <b>Butuh bantuan?</b>
+              <small>
+                {isTeacher
+                  ? "Hubungi administrasi sekolah"
+                  : "Hubungi wali kelas"}
+              </small>
+            </span>
+          )}
         </div>
-        <button type="button" className={styles.studentLogout} onClick={logout}>
-          ↪ Keluar
+        <button
+          type="button"
+          className={styles.studentLogout}
+          onClick={logout}
+          title={isCollapsed ? "Keluar" : undefined}
+        >
+          <span aria-hidden="true">↪</span>
+          {!isCollapsed && " Keluar"}
         </button>
       </aside>
 
       <main className={styles.studentMain}>
         <header className={styles.studentTopbar}>
           <div className={styles.studentTopbarBrand}>
+            <button
+              type="button"
+              className={styles.portalHamburgerBtn}
+              onClick={toggleSidebar}
+              aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
+              title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
+            >
+              ☰
+            </button>
             <span className={styles.studentBrandMark}>M</span>
             <span>Portal {role}</span>
           </div>

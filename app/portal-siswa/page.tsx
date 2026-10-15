@@ -7,6 +7,7 @@ import { sessionMarkerKey } from "../../lib/browser-session";
 import styles from "../page.module.css";
 import { SchoolVisionMission } from "../../components/school-vision-mission";
 import { OfficialScheduleBoard } from "../../components/official-schedule-board";
+import { useSidebarCollapse } from "../../lib/use-sidebar-collapse";
 import { getApiErrorMessage } from "../../lib/api-error";
 
 type StudentSession = {
@@ -55,6 +56,8 @@ export default function StudentPortalPage() {
   const [search, setSearch] = useState("");
   const [showAllClasses, setShowAllClasses] = useState(false);
   const [dashboardScheduleMode, setDashboardScheduleMode] = useState<"official" | "table">("official");
+  const { isCollapsed, isMobileOpen, toggleSidebar, closeMobile } =
+    useSidebarCollapse("maranatha_student_sidebar_collapsed");
   const [today] = useState(getTodayName);
   const [dateLabel] = useState(formatDate);
   const [loading, setLoading] = useState(true);
@@ -252,58 +255,113 @@ export default function StudentPortalPage() {
 
   return (
     <div className={styles.studentDashboard} id="overview">
-      <aside className={styles.studentSidebar}>
-        <Link href="#overview" className={styles.studentBrand}>
+      {isMobileOpen && (
+        <div
+          className={styles.sidebarBackdrop}
+          onClick={closeMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
+      >
+        <Link href="#overview" className={styles.studentBrand} title="SD - SMP Maranatha">
           <span className={styles.studentBrandMark}>M</span>
-          <span>
-            SD - SMP <b>Maranatha</b>
-          </span>
+          {!isCollapsed && (
+            <span>
+              SD - SMP <b>Maranatha</b>
+            </span>
+          )}
         </Link>
 
-        <label className={styles.studentSearch}>
-          <span aria-hidden="true">⌕</span>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cari menu..."
-            aria-label="Cari menu"
-          />
-        </label>
+        {!isCollapsed && (
+          <label className={styles.studentSearch}>
+            <span aria-hidden="true">⌕</span>
+            <input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Cari menu (min. 2 karakter)..."
+              aria-label="Cari menu"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className={styles.searchClearBtn}
+                title="Hapus pencarian"
+              >
+                ×
+              </button>
+            )}
+          </label>
+        )}
 
-        <p className={styles.studentMenuLabel}>MENU SISWA</p>
+        {!isCollapsed && <p className={styles.studentMenuLabel}>MENU SISWA</p>}
         <nav className={styles.studentNav} aria-label="Navigasi portal siswa">
           {filteredMenus.map((menu, index) => (
             <Link
               key={menu.label}
               href={menu.href}
               className={`${styles.studentNavItem} ${index === 0 ? styles.studentNavActive : ""}`}
+              data-tooltip={menu.label}
+              title={isCollapsed ? menu.label : undefined}
+              onClick={() => {
+                if (isMobileOpen) closeMobile();
+              }}
             >
               <span aria-hidden="true">{menu.icon}</span>
-              {menu.label}
-              {menu.href.startsWith("/") ? (
-                <span className={styles.studentNavArrow} aria-hidden="true">
-                  ›
-                </span>
-              ) : null}
+              {!isCollapsed && (
+                <>
+                  <span className={styles.studentNavLabel}>{menu.label}</span>
+                  {menu.href.startsWith("/") ? (
+                    <span className={styles.studentNavArrow} aria-hidden="true">
+                      ›
+                    </span>
+                  ) : null}
+                </>
+              )}
             </Link>
           ))}
+          {filteredMenus.length === 0 && !isCollapsed && (
+            <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
+          )}
         </nav>
 
         <div className={styles.studentSidebarBottom}>
-          <span className={styles.studentHelpIcon}>?</span>
-          <span>
-            <b>Butuh bantuan?</b>
-            <small>Hubungi wali kelas atau sekolah</small>
+          <span className={styles.studentHelpIcon} title="Butuh bantuan?">
+            ?
           </span>
+          {!isCollapsed && (
+            <span>
+              <b>Butuh bantuan?</b>
+              <small>Hubungi wali kelas atau sekolah</small>
+            </span>
+          )}
         </div>
-        <button type="button" className={styles.studentLogout} onClick={logout}>
-          <span aria-hidden="true">↪</span> Keluar
+        <button
+          type="button"
+          className={styles.studentLogout}
+          onClick={logout}
+          title={isCollapsed ? "Keluar" : undefined}
+        >
+          <span aria-hidden="true">↪</span>
+          {!isCollapsed && " Keluar"}
         </button>
       </aside>
 
       <main className={styles.studentMain}>
         <header className={styles.studentTopbar}>
           <div className={styles.studentTopbarBrand}>
+            <button
+              type="button"
+              className={styles.portalHamburgerBtn}
+              onClick={toggleSidebar}
+              aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
+              title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
+            >
+              ☰
+            </button>
             <span className={styles.studentBrandMark}>M</span>
             <span>Portal Akademik Siswa</span>
           </div>

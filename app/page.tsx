@@ -3,24 +3,10 @@
 import { useEffect, useState } from "react";
 import styles from "./page.module.css";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { sessionMarkerKey } from "../lib/browser-session";
-import { SchoolVisionMission } from "../components/school-vision-mission";
+import { SchoolShell } from "../components/school-shell";
 import { useAcademicRecords } from "../lib/use-academic-records";
 import { getApiErrorMessage } from "../lib/api-error";
 
-const navItems = [
-  { label: "Dashboard", href: "/", icon: "⌂", active: true },
-  { label: "Data Siswa", href: "/siswa", icon: "♙" },
-  { label: "Data Guru", href: "/guru", icon: "♟" },
-  { label: "Kelas", href: "/kelas", icon: "▦" },
-  { label: "Mata Pelajaran", href: "/mata-pelajaran", icon: "◈" },
-  { label: "Jadwal Pelajaran", href: "/jadwal", icon: "◷" },
-  { label: "Absensi Siswa", href: "/absensi", icon: "✓" },
-  { label: "Pengelolaan Nilai", href: "/nilai", icon: "▤" },
-  { label: "Rapor", href: "/rapor", icon: "▧" },
-  { label: "Laporan Akademik", href: "/laporan", icon: "◫" },
-];
 
 type RosterStudent = {
   id: string;
@@ -45,7 +31,6 @@ function isoDate(date: Date) {
 }
 
 export default function Home() {
-  const router = useRouter();
   const [students, setStudents] = useState<RosterStudent[]>([]);
   const [teachers, setTeachers] = useState<RosterTeacher[]>([]);
   const [rosterLoading, setRosterLoading] = useState(true);
@@ -230,96 +215,13 @@ export default function Home() {
     attendanceLoading ||
     gradesLoading;
 
-  async function handleLogout() {
-    window.sessionStorage.removeItem(sessionMarkerKey);
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } finally {
-      router.replace("/login");
-      router.refresh();
-    }
-  }
-
   return (
-    <div className={styles.appShell}>
-      <aside className={styles.sidebar}>
-        <a href="#" className={styles.brand}>
-          <span className={styles.brandMark}>M</span>
-          <span>SD - SMP Kristen Maranatha</span>
-        </a>
-
-        <p className={styles.menuLabel}>MENU UTAMA</p>
-
-        <nav className={styles.navMenu}>
-          {navItems.map(({ label, href, icon, active }) => (
-            <Link
-              key={label}
-              href={href}
-              className={`${styles.navItem} ${active ? styles.active : ""}`}
-            >
-              <i>{icon}</i>
-              {label}
-            </Link>
-          ))}
-        </nav>
-
-        <div className={styles.sidebarBottom}>
-          <div className={styles.supportIcon}>?</div>
-          <div>
-            <b>Butuh bantuan?</b>
-            <small>Hubungi administrator</small>
-          </div>
-        </div>
-      </aside>
-
-      <main className={styles.mainContent}>
-        <header className={styles.topbar}>
-          <button
-            type="button"
-            className={styles.hamburger}
-            aria-label="Toggle menu"
-          >
-            ☰
-          </button>
-
-          <div className={styles.breadcrumb}>
-            <span>Dashboard</span>
-            <small>Ringkasan administrasi sekolah</small>
-          </div>
-
-          <div className={styles.topActions}>
-            <button
-              type="button"
-              className={styles.iconBtn}
-              aria-label="Pencarian"
-            >
-              ⌕
-            </button>
-            <button
-              type="button"
-              className={styles.iconBtn}
-              aria-label="Notifikasi"
-            >
-              ♧
-              <em />
-            </button>
-            <div className={styles.avatar}>AR</div>
-            <div className={styles.profile}>
-              <b>Admin Sekolah</b>
-              <small>Administrator</small>
-            </div>
-            <span className={styles.chevron}>⌄</span>
-            <button
-              type="button"
-              className={styles.logoutButton}
-              onClick={handleLogout}
-            >
-              Keluar
-            </button>
-          </div>
-        </header>
-
-        <section className={styles.page}>
+    <SchoolShell
+      title="Dashboard"
+      subtitle="Ringkasan administrasi sekolah"
+      activeItem="Dashboard"
+    >
+      <section className={styles.page}>
           <div className={styles.pageHeading}>
             <div>
               <p className={styles.eyebrow}>SELAMAT DATANG KEMBALI</p>
@@ -494,9 +396,7 @@ export default function Home() {
               </div>
             </article>
           </div>
-          <SchoolVisionMission />
         </section>
-      </main>
-    </div>
+    </SchoolShell>
   );
 }
