@@ -8,17 +8,16 @@ export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved !== null) {
-        setIsCollapsed(saved === "true");
-      } else {
-        setIsCollapsed(true);
+    // Defer restoration until after paint so SSR/hydration stays deterministic.
+    const restoreFrame = window.requestAnimationFrame(() => {
+      setMounted(true);
+      try {
+        const saved = localStorage.getItem(storageKey);
+        if (saved !== null) setIsCollapsed(saved === "true");
+      } catch {
+        // LocalStorage might be disabled in private mode.
       }
-    } catch {
-      // LocalStorage might be disabled in private mode
-    }
+    });
 
     const handleResize = () => {
       if (typeof window !== "undefined" && window.innerWidth > 820) {
@@ -26,7 +25,10 @@ export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
       }
     };
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.cancelAnimationFrame(restoreFrame);
+      window.removeEventListener("resize", handleResize);
+    };
   }, [storageKey]);
 
   const toggleSidebar = useCallback(() => {

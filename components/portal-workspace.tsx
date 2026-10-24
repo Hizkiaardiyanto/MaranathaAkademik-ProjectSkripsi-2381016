@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { sessionMarkerKey } from "../lib/browser-session";
 import styles from "../app/page.module.css";
-import { SchoolVisionMission } from "./school-vision-mission";
 import { OfficialScheduleBoard } from "./official-schedule-board";
 import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
 
@@ -600,7 +599,6 @@ export function PortalWorkspace({
               )}
             </div>
           </section>
-          <SchoolVisionMission />
         </div>
       </main>
     </div>

@@ -3,12 +3,14 @@
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  padding-top: 64px;
 }
 
 .shellBody {
   display: flex;
   flex: 1;
   width: 100%;
+  min-width: 0;
   min-height: calc(100vh - 64px);
   position: relative;
 }
@@ -325,15 +327,21 @@
 }
 
 .mainContent {
-  flex: 1;
+  flex: 1 1 0;
   min-width: 0;
-  width: 100%;
+  width: auto;
   display: flex;
   flex-direction: column;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mainContentCollapsed {
+  flex-basis: 100%;
+  width: 100%;
+}
+
+.sidebarCollapsed + .mainContent {
+  flex-basis: 100%;
   width: 100%;
 }
 
@@ -346,8 +354,11 @@
   align-items: center;
   padding: 0 24px 0 0 !important;
   justify-content: space-between;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
+  box-sizing: border-box;
   z-index: 50;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
@@ -575,9 +586,11 @@
 }
 
 .page {
+  box-sizing: border-box;
+  width: 100%;
   padding: 34px 36px 42px;
-  max-width: 1510px;
-  margin: auto;
+  max-width: none;
+  margin: 0;
 }
 
 .pageHeading {
@@ -2237,19 +2250,22 @@
   min-width: 0;
   flex: 1;
   width: 100%;
+  padding-top: 64px;
   display: flex;
   flex-direction: column;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .studentTopbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   z-index: 50;
   display: flex;
   min-height: 64px;
   height: 64px;
   width: 100%;
+  box-sizing: border-box;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
@@ -3037,6 +3053,126 @@
   }
 }
 
+.importantAnnouncements {
+  overflow: hidden;
+  border: 1px solid var(--student-line);
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(30, 64, 175, 0.04);
+}
+
+.importantAnnouncementsHeading {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--student-line);
+  background: linear-gradient(90deg, #fffaf0 0%, #ffffff 76%);
+}
+
+.importantAnnouncementsHeading > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.importantAnnouncementsHeading > div > span {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f59e0b;
+  color: #fff;
+  font-weight: 800;
+}
+
+.importantAnnouncementsHeading p {
+  margin: 0 0 3px;
+  color: #9a6800;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.importantAnnouncementsHeading h1 {
+  margin: 0;
+  color: #1f3456;
+  font-size: 20px;
+}
+
+.announcementList {
+  display: grid;
+}
+
+.importantAnnouncement {
+  display: flex;
+  gap: 14px;
+  padding: 18px 24px;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.importantAnnouncement:last-child {
+  border-bottom: 0;
+}
+
+.announcementIcon,
+.announcementUrgentIcon {
+  display: grid;
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  place-items: center;
+  border-radius: 7px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 800;
+}
+
+.announcementUrgentIcon {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.importantAnnouncement h2,
+.importantAnnouncement p {
+  margin: 0;
+}
+
+.importantAnnouncement h2 {
+  color: #263b5c;
+  font-size: 14px;
+}
+
+.importantAnnouncement p,
+.importantAnnouncement time,
+.announcementEmpty {
+  color: var(--student-muted);
+  font-size: 13px;
+}
+
+.importantAnnouncement p {
+  margin-top: 4px;
+  line-height: 1.6;
+}
+
+.importantAnnouncement time {
+  display: block;
+  margin-top: 7px;
+}
+
+.announcementEmpty {
+  margin: 0;
+  padding: 28px 24px;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .importantAnnouncementsHeading,
+  .importantAnnouncement,
+  .announcementEmpty {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
 .studentSidebar {
   flex-basis: clamp(250px, 19vw, 310px);
   width: clamp(250px, 19vw, 310px);
@@ -3349,5 +3485,104 @@
   }
   .teacherClassRow small {
     grid-column: 1 / -1;
+  }
+}
+
+/* Brand sekolah cukup tampil pada topbar; jangan ulangi di drawer/sidebar. */
+.studentSidebar .brandRow,
+.mobileDrawerHeader {
+  display: none;
+}
+
+/* Desktop: navbar selalu menempel pada viewport saat halaman digulir.
+   Main content otomatis mengambil ruang navbar ketika navbar diciutkan. */
+@media (min-width: 821px) {
+  .sidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    height: calc(100vh - 64px);
+  }
+
+  .mainContent {
+    width: calc(100% - 260px);
+    margin-left: 260px;
+  }
+
+  .sidebarCollapsed + .mainContent {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .studentDashboard {
+    display: block;
+  }
+
+  .studentSidebar {
+    position: fixed;
+    top: 64px;
+    left: 0;
+    height: calc(100vh - 64px);
+  }
+
+  .studentMain {
+    width: calc(100% - 260px);
+    margin-left: 260px;
+  }
+
+  .studentSidebarCollapsed + .studentMain {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .studentTopbar,
+  .studentSidebarCollapsed + .studentMain .studentTopbar {
+    width: 100%;
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 820px) {
+  .appShell {
+    padding-top: 60px;
+  }
+
+  .studentMain {
+    padding-top: 60px;
+  }
+}
+
+/* Portal siswa dan guru memakai pola shell yang sama dengan portal admin:
+   header penuh di atas, sidebar tetap di kiri, dan konten dapat digulir. */
+@media (min-width: 821px) {
+  .studentDashboard {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+
+  .studentSidebar {
+    position: sticky;
+    top: 64px;
+    align-self: flex-start;
+    flex: 0 0 260px;
+    width: 260px;
+    min-width: 260px;
+    height: calc(100vh - 64px);
+  }
+
+  .studentMain {
+    width: auto;
+    min-height: 100vh;
+  }
+
+  /* Tarik header ke kiri agar memenuhi layar seperti topbar admin. */
+  .studentTopbar {
+    width: calc(100% + 260px);
+    margin-left: -260px;
+  }
+
+  .studentSidebarCollapsed + .studentMain .studentTopbar {
+    width: 100%;
+    margin-left: 0;
   }
 }
