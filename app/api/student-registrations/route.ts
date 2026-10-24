@@ -73,12 +73,17 @@ export async function PATCH(request: Request) {
     typeof payload.email === "string"
       ? payload.email.trim().toLowerCase()
       : "";
-  const studentId =
+  const rawStudentId =
     typeof payload.studentId === "string" ? payload.studentId.trim() : "";
-  const createStudent = payload.createStudent === true;
-  if (!email || (!createStudent && !studentId)) {
+  const isCreateStudent =
+    payload.createStudent === true ||
+    rawStudentId === "__create__" ||
+    !rawStudentId;
+  const studentId = isCreateStudent ? "" : rawStudentId;
+
+  if (!email) {
     return NextResponse.json(
-      { error: "Email pendaftar dan data induk siswa wajib dipilih." },
+      { error: "Email pendaftar wajib diisi." },
       { status: 400 },
     );
   }
@@ -99,34 +104,86 @@ export async function PATCH(request: Request) {
         { status: 409 },
       );
     }
+
     let approvedStudentId = studentId;
-    if (createStudent) {
-      if (!account.grade || !account.nis || !account.nisn || !account.gender) {
-        await connection.rollback();
-        return NextResponse.json(
-          { error: "Data pendaftaran lama belum memiliki NIS, NISN, dan jenis kelamin. Pilih data induk siswa yang sudah ada." },
-          { status: 400 },
-        );
+    let finalGrade = account.grade ? account.grade.trim() : "Kelas 1";
+    let finalNis = account.nis ? account.nis.trim() : "";
+    let finalNisn = account.nisn ? account.nisn.trim() : "";
+    let finalGender: "L" | "P" = account.gender === "P" ? "P" : "L";
+
+    if (isCreateStudent) {
+      if (/^\d+$/.test(finalGrade)) {
+        finalGrade = `Kelas ${finalGrade}`;
       }
-      const [duplicates] = await connection.execute<RowDataPacket[]>(
-        "SELECT id FROM students WHERE nis = ? OR nisn = ? LIMIT 1",
-        [account.nis, account.nisn],
-      );
-      if (duplicates.length) {
-        await connection.rollback();
-        return NextResponse.json(
-          { error: "NIS atau NISN pendaftar sudah digunakan. Pilih data induk yang tersedia untuk menautkan akun ini." },
-          { status: 409 },
+
+      if (!finalNis) {
+        let candidateNis = "";
+        let isUnique = false;
+        const currentYear = new Date().getFullYear();
+        for (let i = 0; i < 20; i++) {
+          const rand = String(Math.floor(1000 + Math.random() * 9000));
+          candidateNis = `${currentYear}${rand}`;
+          const [dup] = await connection.execute<RowDataPacket[]>(
+            "SELECT id FROM students WHERE nis = ? LIMIT 1",
+            [candidateNis],
+          );
+          if (!dup.length) {
+            isUnique = true;
+            break;
+          }
+        }
+        finalNis = isUnique ? candidateNis : `NIS-${randomUUID().slice(0, 8).toUpperCase()}`;
+      } else {
+        const [dup] = await connection.execute<RowDataPacket[]>(
+          "SELECT id FROM students WHERE nis = ? LIMIT 1",
+          [finalNis],
         );
+        if (dup.length) {
+          finalNis = `${finalNis}-${Math.floor(10 + Math.random() * 90)}`;
+        }
       }
+
+      if (!finalNisn) {
+        let candidateNisn = "";
+        let isUnique = false;
+        for (let i = 0; i < 20; i++) {
+          const rand = String(Math.floor(10000000 + Math.random() * 90000000));
+          candidateNisn = `00${rand}`;
+          const [dup] = await connection.execute<RowDataPacket[]>(
+            "SELECT id FROM students WHERE nisn = ? LIMIT 1",
+            [candidateNisn],
+          );
+          if (!dup.length) {
+            isUnique = true;
+            break;
+          }
+        }
+        finalNisn = isUnique ? candidateNisn : `00${Math.floor(10000000 + Math.random() * 90000000)}`;
+      } else {
+        const [dup] = await connection.execute<RowDataPacket[]>(
+          "SELECT id FROM students WHERE nisn = ? LIMIT 1",
+          [finalNisn],
+        );
+        if (dup.length) {
+          finalNisn = `${finalNisn.slice(0, 8)}${Math.floor(10 + Math.random() * 90)}`;
+        }
+      }
+
       approvedStudentId = randomUUID();
       await connection.execute(
-        "INSERT INTO students (id, name, nis, nisn, class_name, gender, status) VALUES (?, ?, ?, ?, ?, ?, 'Baru')",
-        [approvedStudentId, account.name, account.nis, account.nisn, account.grade, account.gender],
+        "INSERT INTO students (id, name, nis, nisn, class_name, gender, status) VALUES (?, ?, ?, ?, ?, ?, 'Aktif')",
+        [
+          approvedStudentId,
+          account.name.trim(),
+          finalNis,
+          finalNisn,
+          finalGrade,
+          finalGender,
+        ],
       );
     } else {
       const [students] = await connection.execute<RowDataPacket[]>(
-        "SELECT id FROM students WHERE id = ? LIMIT 1",
+        "SELECT id, class_name, nis, nisn, gender FROM students WHERE id = ? LIMIT 1",
         [studentId],
       );
       if (!students.length) {
@@ -136,10 +193,16 @@ export async function PATCH(request: Request) {
           { status: 404 },
         );
       }
+      const existing = students[0];
+      finalGrade = existing.class_name;
+      finalNis = existing.nis;
+      finalNisn = existing.nisn;
+      finalGender = existing.gender;
     }
+
     const [result] = await connection.execute<ResultSetHeader>(
-      "UPDATE portal_accounts SET student_id = ?, approval_status = 'approved', grade = (SELECT class_name FROM students WHERE id = ?) WHERE email = ? AND role = 'Siswa' AND approval_status = 'pending'",
-      [approvedStudentId, approvedStudentId, email],
+      "UPDATE portal_accounts SET student_id = ?, approval_status = 'approved', grade = ?, nis = COALESCE(nis, ?), nisn = COALESCE(nisn, ?), gender = COALESCE(gender, ?) WHERE email = ? AND role = 'Siswa' AND approval_status = 'pending'",
+      [approvedStudentId, finalGrade, finalNis, finalNisn, finalGender, email],
     );
     if (!result.affectedRows) {
       await connection.rollback();
@@ -149,7 +212,7 @@ export async function PATCH(request: Request) {
       );
     }
     await connection.commit();
-    return NextResponse.json({ message: "Akun siswa berhasil diverifikasi." });
+    return NextResponse.json({ message: "Akun siswa berhasil diverifikasi dan terdaftar ke data siswa." });
   } catch (error) {
     if (connection) await connection.rollback();
     return databaseErrorResponse(

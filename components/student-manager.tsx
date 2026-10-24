@@ -173,9 +173,8 @@ export function StudentManager() {
   }
 
   async function approveRegistration(registration: PendingRegistration) {
-    const selection = selectedStudents[registration.email];
+    const selection = selectedStudents[registration.email] ?? "__create__";
     const createStudent = selection === "__create__";
-    if (!selection) return;
     setError("");
     setApprovingEmail(registration.email);
     try {
@@ -278,7 +277,7 @@ export function StudentManager() {
               onChange={(e) => setForm({ ...form, status: e.target.value })}
             >
               <option value="Aktif">Aktif</option>
-              <option value="Baru">Baru</option>
+              <option value="Lulus">Lulus</option>
               <option value="Pindah">Pindah</option>
             </select>
           </label>
@@ -292,7 +291,7 @@ export function StudentManager() {
               {saving
                 ? "Menyimpan..."
                 : editingId
-                  ? "Simpan Perubahan"
+                  ? "Update Siswa"
                   : "Simpan Siswa"}
             </button>
             {editingId ? (
@@ -321,7 +320,7 @@ export function StudentManager() {
           <div>
             <h3>Pendaftaran Siswa Menunggu Verifikasi</h3>
             <p>
-              Buat data siswa baru, atau tautkan akun ke data induk yang sudah ada.
+              Tekan tombol Verifikasi untuk langsung mendaftarkan pendaftar menjadi siswa aktif.
             </p>
           </div>
         </div>
@@ -345,63 +344,89 @@ export function StudentManager() {
                 <td colSpan={4}>Tidak ada pendaftaran yang menunggu verifikasi.</td>
               </tr>
             ) : null}
-            {registrations.map((registration) => (
-              <tr key={registration.email}>
-                <td>
-                  <b>{registration.name}</b>
-                  <br />
-                  {registration.email}
-                </td>
-                <td>
-                  {registration.registrationId || "—"}
-                  <br />
-                  Kelas: {registration.grade || "—"}
-                  <br />
-                  Wali: {registration.parentName || "—"}
-                </td>
-                <td>
-                  <select
-                    aria-label={`Pilih tindakan verifikasi untuk ${registration.name}`}
-                    value={selectedStudents[registration.email] || ""}
-                    onChange={(event) =>
-                      setSelectedStudents((current) => ({
-                        ...current,
-                        [registration.email]: event.target.value,
-                      }))
-                    }
-                  >
-                    <option value="">Pilih tindakan</option>
-                    {registration.nis && registration.nisn && registration.gender ? (
-                      <option value="__create__">Buat data induk siswa baru</option>
-                    ) : null}
-                    {students
-                      .filter((student) => !linkedStudentIds.includes(student.id))
-                      .map((student) => (
-                      <option key={student.id} value={student.id}>
-                        {student.name} · {student.nis} · {student.className}
+            {registrations.map((registration) => {
+              const selectedAction =
+                selectedStudents[registration.email] ?? "__create__";
+              const isCreate = selectedAction === "__create__";
+              return (
+                <tr key={registration.email}>
+                  <td>
+                    <b>{registration.name}</b>
+                    <br />
+                    <span style={{ fontSize: "12px", color: "#64748b" }}>
+                      {registration.email}
+                    </span>
+                  </td>
+                  <td>
+                    <span style={{ fontWeight: 600 }}>
+                      {registration.registrationId || "—"}
+                    </span>
+                    <br />
+                    Kelas: <b>{registration.grade || "—"}</b>
+                    <br />
+                    Wali: {registration.parentName || "—"}
+                  </td>
+                  <td>
+                    <select
+                      aria-label={`Pilih tindakan verifikasi untuk ${registration.name}`}
+                      value={selectedAction}
+                      onChange={(event) =>
+                        setSelectedStudents((current) => ({
+                          ...current,
+                          [registration.email]: event.target.value,
+                        }))
+                      }
+                      style={{
+                        padding: "6px 10px",
+                        borderRadius: "6px",
+                        border: "1px solid #cbd5e1",
+                        fontSize: "13px",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      <option value="__create__">
+                        ✨ Buat data induk siswa baru (Otomatis)
                       </option>
-                      ))}
-                  </select>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className={styles.tableAction}
-                    disabled={
-                      !selectedStudents[registration.email] ||
-                      approvingEmail === registration.email
-                    }
-                    onClick={() => void approveRegistration(registration)}
-                  >
-                    {approvingEmail === registration.email
-                      ? "Memverifikasi..."
-                      : selectedStudents[registration.email] === "__create__"
-                        ? "Verifikasi & Buat Siswa"
-                        : "Verifikasi & Tautkan"}
-                  </button>
-                </td>
-              </tr>
-            ))}
+                      {students
+                        .filter(
+                          (student) => !linkedStudentIds.includes(student.id),
+                        )
+                        .map((student) => (
+                          <option key={student.id} value={student.id}>
+                            Tautkan ke: {student.name} · {student.nis} · {student.className}
+                          </option>
+                        ))}
+                    </select>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      disabled={approvingEmail === registration.email}
+                      onClick={() => void approveRegistration(registration)}
+                      style={{
+                        padding: "8px 18px",
+                        fontSize: "13px",
+                        fontWeight: 700,
+                        backgroundColor: "#2563eb",
+                        color: "#ffffff",
+                        border: "none",
+                        borderRadius: "6px",
+                        cursor: approvingEmail === registration.email ? "not-allowed" : "pointer",
+                        boxShadow: "0 1px 3px rgba(37, 99, 235, 0.25)",
+                        whiteSpace: "nowrap",
+                        transition: "background-color 0.15s ease",
+                      }}
+                    >
+                      {approvingEmail === registration.email
+                        ? "Memverifikasi..."
+                        : isCreate
+                          ? "Verifikasi"
+                          : "Verifikasi & Tautkan"}
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

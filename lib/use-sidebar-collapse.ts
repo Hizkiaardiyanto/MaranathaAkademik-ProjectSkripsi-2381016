@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 
 export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -13,6 +13,8 @@ export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
       const saved = localStorage.getItem(storageKey);
       if (saved !== null) {
         setIsCollapsed(saved === "true");
+      } else {
+        setIsCollapsed(true);
       }
     } catch {
       // LocalStorage might be disabled in private mode
@@ -48,7 +50,7 @@ export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
   }, []);
 
   return {
-    isCollapsed: mounted ? isCollapsed : false,
+    isCollapsed: mounted ? isCollapsed : true,
     isMobileOpen,
     toggleSidebar,
     closeMobile,
