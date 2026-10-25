@@ -135,138 +135,22 @@ export default function TeacherPortalPage() {
 
   return (
     <div className={styles.studentDashboard}>
-      {isMobileOpen && (
-        <div
-          className={styles.sidebarBackdrop}
-          onClick={closeMobile}
-          aria-hidden="true"
-        />
-      )}
-
-      <aside
-        className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
-      >
-        <div className={styles.brandRow}>
-          <Link href="/portal-guru" className={styles.studentBrand} title="SD - SMP Maranatha">
-            <span className={styles.studentBrandMark}>M</span>
-            {(!isCollapsed || isMobileOpen) && (
-              <span>
-                SD - SMP <b>Maranatha</b>
-              </span>
-            )}
-          </Link>
-          {isMobileOpen ? (
-            <button
-              type="button"
-              className={styles.mobileCloseDrawerBtn}
-              onClick={closeMobile}
-              title="Tutup menu"
-              aria-label="Tutup menu"
-            >
-              ×
-            </button>
-          ) : !isCollapsed ? (
-            <button
-              type="button"
-              className={styles.sidebarCollapseBtn}
-              onClick={toggleSidebar}
-              title="Ciutkan menu sidebar (Collapse)"
-              aria-label="Ciutkan menu sidebar"
-            >
-              «
-            </button>
-          ) : null}
+      {/* TOPBAR: always full-width at the top */}
+      <header className={styles.studentTopbar}>
+        <div className={styles.headerBrandBlock}>
+          <span className={styles.headerBrandLogo}>M</span>
+          <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
+          <button
+            type="button"
+            className={styles.headerHamburgerBtn}
+            onClick={toggleSidebar}
+            aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
+            title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
+          >
+            ☰
+          </button>
         </div>
-
-        {(!isCollapsed || isMobileOpen) && (
-          <label className={styles.studentSearch} style={{ marginBottom: "12px" }}>
-            <span aria-hidden="true">⌕</span>
-            <input
-              value={menuSearch}
-              onChange={(e) => setMenuSearch(e.target.value)}
-              placeholder="Cari menu (min. 2 karakter)..."
-              aria-label="Cari menu"
-            />
-            {menuSearch && (
-              <button
-                type="button"
-                onClick={() => setMenuSearch("")}
-                className={styles.searchClearBtn}
-                title="Hapus pencarian"
-              >
-                ×
-              </button>
-            )}
-          </label>
-        )}
-
-        {(!isCollapsed || isMobileOpen) && <p className={styles.studentMenuLabel}>MENU GURU</p>}
-
-        <nav className={styles.studentNav} aria-label="Navigasi portal guru">
-          {filteredMenu.map(([label, href, icon]) => (
-            <Link
-              key={href}
-              href={href}
-              className={`${styles.studentNavItem} ${href === "/portal-guru" ? styles.studentNavActive : ""}`}
-              data-tooltip={label}
-              title={isCollapsed && !isMobileOpen ? label : undefined}
-              onClick={() => {
-                if (isMobileOpen) closeMobile();
-              }}
-            >
-              <span aria-hidden="true">{icon}</span>
-              {(!isCollapsed || isMobileOpen) && (
-                <>
-                  <span className={styles.studentNavLabel}>{label}</span>
-                  <span className={styles.studentNavArrow} aria-hidden="true">
-                    ›
-                  </span>
-                </>
-              )}
-            </Link>
-          ))}
-          {filteredMenu.length === 0 && (!isCollapsed || isMobileOpen) && (
-            <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
-          )}
-        </nav>
-
-        <div className={styles.studentSidebarBottom}>
-          <span className={styles.studentHelpIcon} title="Butuh bantuan?">
-            ?
-          </span>
-          {(!isCollapsed || isMobileOpen) && (
-            <span>
-              <b>Butuh bantuan?</b>
-              <small>Hubungi administrasi sekolah</small>
-            </span>
-          )}
-        </div>
-        <button
-          type="button"
-          className={styles.studentLogout}
-          onClick={logout}
-          title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
-        >
-          <span aria-hidden="true">↪</span>
-          {(!isCollapsed || isMobileOpen) && " Keluar"}
-        </button>
-      </aside>
-
-      <main className={styles.studentMain}>
-        <header className={styles.studentTopbar}>
-          <div className={styles.headerBrandBlock}>
-            <span className={styles.headerBrandLogo}>M</span>
-            <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
-            <button
-              type="button"
-              className={styles.headerHamburgerBtn}
-              onClick={toggleSidebar}
-              aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
-              title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
-            >
-              ☰
-            </button>
-          </div>
+        <div className={styles.studentTopbarActions}>
           <div className={styles.studentProfile}>
             <span className={styles.studentAvatar}>{initials}</span>
             <span>
@@ -274,10 +158,138 @@ export default function TeacherPortalPage() {
               <small>{teacher?.subject || "Mata pelajaran"}</small>
             </span>
           </div>
-        </header>
+          <button
+            type="button"
+            className={styles.studentLogoutTopbar}
+            onClick={logout}
+          >
+            Keluar
+          </button>
+        </div>
+      </header>
 
-        <div className={styles.studentContent}>
-          <section className={styles.studentSemester}>
+      {/* BODY: sidebar (left) + main content (right) */}
+      <div className={styles.shellBody}>
+        {isMobileOpen && (
+          <div
+            className={styles.sidebarBackdrop}
+            onClick={closeMobile}
+            aria-hidden="true"
+          />
+        )}
+
+        <aside
+          className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
+        >
+          <div className={styles.brandRow}>
+            <Link href="/portal-guru" className={styles.studentBrand} title="SD - SMP Maranatha">
+              <span className={styles.studentBrandMark}>M</span>
+              {(!isCollapsed || isMobileOpen) && (
+                <span>
+                  SD - SMP <b>Maranatha</b>
+                </span>
+              )}
+            </Link>
+            {isMobileOpen ? (
+              <button
+                type="button"
+                className={styles.mobileCloseDrawerBtn}
+                onClick={closeMobile}
+                title="Tutup menu"
+                aria-label="Tutup menu"
+              >
+                ×
+              </button>
+            ) : !isCollapsed ? (
+              <button
+                type="button"
+                className={styles.sidebarCollapseBtn}
+                onClick={toggleSidebar}
+                title="Ciutkan menu sidebar (Collapse)"
+                aria-label="Ciutkan menu sidebar"
+              >
+                «
+              </button>
+            ) : null}
+          </div>
+
+          {(!isCollapsed || isMobileOpen) && (
+            <label className={styles.studentSearch} style={{ marginBottom: "12px" }}>
+              <span aria-hidden="true">⌕</span>
+              <input
+                value={menuSearch}
+                onChange={(e) => setMenuSearch(e.target.value)}
+                placeholder="Cari menu (min. 2 karakter)..."
+                aria-label="Cari menu"
+              />
+              {menuSearch && (
+                <button
+                  type="button"
+                  onClick={() => setMenuSearch("")}
+                  className={styles.searchClearBtn}
+                  title="Hapus pencarian"
+                >
+                  ×
+                </button>
+              )}
+            </label>
+          )}
+
+          {(!isCollapsed || isMobileOpen) && <p className={styles.studentMenuLabel}>MENU GURU</p>}
+
+          <nav className={styles.studentNav} aria-label="Navigasi portal guru">
+            {filteredMenu.map(([label, href, icon]) => (
+              <Link
+                key={href}
+                href={href}
+                className={`${styles.studentNavItem} ${href === "/portal-guru" ? styles.studentNavActive : ""}`}
+                data-tooltip={label}
+                title={isCollapsed && !isMobileOpen ? label : undefined}
+                onClick={() => {
+                  if (isMobileOpen) closeMobile();
+                }}
+              >
+                <span aria-hidden="true">{icon}</span>
+                {(!isCollapsed || isMobileOpen) && (
+                  <>
+                    <span className={styles.studentNavLabel}>{label}</span>
+                    <span className={styles.studentNavArrow} aria-hidden="true">
+                      ›
+                    </span>
+                  </>
+                )}
+              </Link>
+            ))}
+            {filteredMenu.length === 0 && (!isCollapsed || isMobileOpen) && (
+              <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
+            )}
+          </nav>
+
+          <div className={styles.studentSidebarBottom}>
+            <span className={styles.studentHelpIcon} title="Butuh bantuan?">
+              ?
+            </span>
+            {(!isCollapsed || isMobileOpen) && (
+              <span>
+                <b>Butuh bantuan?</b>
+                <small>Hubungi administrasi sekolah</small>
+              </span>
+            )}
+          </div>
+          <button
+            type="button"
+            className={styles.studentLogout}
+            onClick={logout}
+            title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
+          >
+            <span aria-hidden="true">↪</span>
+            {(!isCollapsed || isMobileOpen) && " Keluar"}
+          </button>
+        </aside>
+
+        <main className={styles.studentMain}>
+          <div className={styles.studentContent}>
+            <section className={styles.studentSemester}>
             <div>
               <span aria-hidden="true">◈</span>
               <b>MATA PELAJARAN:</b>
@@ -472,8 +484,9 @@ export default function TeacherPortalPage() {
             </div>
           </section>
           <SchoolVisionMission />
-        </div>
-      </main>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
