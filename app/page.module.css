@@ -25,8 +25,10 @@
   padding: 16px 14px 24px;
   display: flex;
   flex-direction: column;
-  position: sticky;
+  position: fixed;
   top: 64px;
+  left: 0;
+  bottom: 0;
   height: calc(100vh - 64px);
   z-index: 40;
   border-right: 1px solid #eaf0f7;
@@ -2023,8 +2025,10 @@
 }
 
 .studentSidebar {
-  position: sticky;
+  position: fixed;
   top: 64px;
+  left: 0;
+  bottom: 0;
   z-index: 40;
   display: flex;
   flex: 0 0 270px;
@@ -3541,11 +3545,13 @@
 @media (min-width: 821px) {
   .sidebar,
   .studentSidebar {
-    position: sticky !important;
+    position: fixed !important;
     top: 64px !important;
+    left: 0 !important;
+    bottom: 0 !important;
     height: calc(100vh - 64px) !important;
     flex-shrink: 0 !important;
-    align-self: flex-start !important;
+    z-index: 40 !important;
   }
 
   /* Lebar 270px hanya saat sidebar TERBUKA. Saat ditutup, lebar tetap 0
@@ -3556,25 +3562,44 @@
     min-width: 270px !important;
     max-width: 270px !important;
     box-sizing: border-box !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .sidebar.sidebarCollapsed,
+  .studentSidebar.studentSidebarCollapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    overflow: hidden !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
   }
 
   .mainContent,
   .studentMain {
-    flex: 1 1 0 !important;
-    min-width: 0 !important;
-    width: auto !important;
-    margin-left: 0 !important;
+    margin-left: 270px !important;
+    width: calc(100% - 270px) !important;
     max-width: calc(100% - 270px) !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
     box-sizing: border-box !important;
+    transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+                max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   .sidebarCollapsed + .mainContent,
   .mainContent.mainContentCollapsed,
   .studentSidebarCollapsed + .studentMain,
   .studentMain.studentMainCollapsed {
-    max-width: 100% !important;
-    width: 100% !important;
     margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .topbar,
