@@ -50,33 +50,169 @@ export function StudentPortalDashboard() {
 
   return (
     <div className={styles.studentDashboard} id="overview">
-      {isMobileOpen ? <div className={styles.sidebarBackdrop} onClick={closeMobile} aria-hidden="true" /> : null}
-      <aside className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}>
-        <div className={styles.brandRow}>
-          <Link href="/portal-siswa" className={styles.studentBrand} title="SD - SMP Maranatha"><span className={styles.studentBrandMark}>M</span>{!isCollapsed || isMobileOpen ? <span>SD - SMP <b>Maranatha</b></span> : null}</Link>
-          {isMobileOpen ? <button type="button" className={styles.mobileCloseDrawerBtn} onClick={closeMobile} aria-label="Tutup menu">×</button> : !isCollapsed ? <button type="button" className={styles.sidebarCollapseBtn} onClick={toggleSidebar} aria-label="Ciutkan menu sidebar">«</button> : null}
+      {/* TOPBAR: always full-width at the top */}
+      <header className={styles.studentTopbar}>
+        <div className={styles.headerBrandBlock}>
+          <span className={styles.headerBrandLogo}>M</span>
+          <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
+          <button
+            type="button"
+            className={styles.headerHamburgerBtn}
+            onClick={toggleSidebar}
+            aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
+            title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
+          >
+            ☰
+          </button>
         </div>
-        {!isCollapsed || isMobileOpen ? <label className={styles.studentSearch}><span aria-hidden="true">⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Cari menu..." aria-label="Cari menu" />{search ? <button type="button" onClick={() => setSearch("")} className={styles.searchClearBtn} aria-label="Hapus pencarian">×</button> : null}</label> : null}
-        {!isCollapsed || isMobileOpen ? <p className={styles.studentMenuLabel}>MENU SISWA</p> : null}
-        <nav className={styles.studentNav} aria-label="Navigasi portal siswa">
-          {filteredMenus.map((menu) => <Link key={menu.label} href={menu.href} className={`${styles.studentNavItem} ${menu.href === "/portal-siswa" ? styles.studentNavActive : ""}`} title={isCollapsed && !isMobileOpen ? menu.label : undefined} onClick={() => isMobileOpen && closeMobile()}><span aria-hidden="true">{menu.icon}</span>{!isCollapsed || isMobileOpen ? <><span className={styles.studentNavLabel}>{menu.label}</span>{menu.href.startsWith("/") ? <span className={styles.studentNavArrow} aria-hidden="true">›</span> : null}</> : null}</Link>)}
-          {filteredMenus.length === 0 && (!isCollapsed || isMobileOpen) ? <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p> : null}
-        </nav>
-        <div className={styles.studentSidebarBottom}><span className={styles.studentHelpIcon}>?</span>{!isCollapsed || isMobileOpen ? <span><b>Butuh bantuan?</b><small>Hubungi wali kelas atau sekolah</small></span> : null}</div>
-        <button type="button" className={styles.studentLogout} onClick={logout} title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}><span aria-hidden="true">↪</span>{!isCollapsed || isMobileOpen ? " Keluar" : null}</button>
-      </aside>
-      <main className={styles.studentMain}>
-        <header className={styles.studentTopbar}>
-          <div className={styles.headerBrandBlock}><span className={styles.headerBrandLogo}>M</span><span className={styles.headerBrandTitle}>SD - SMP Maranatha</span><button type="button" className={styles.headerHamburgerBtn} onClick={toggleSidebar} aria-label="Buka atau ciutkan menu sidebar">☰</button></div>
-          <div className={styles.studentTopbarActions}><span className={styles.studentDate}>{dateLabel}</span><div className={styles.studentProfile}><span className={styles.studentAvatar}>{initials}</span><span><b>{student?.name || "Siswa"}</b><small>{student?.grade || "SD - SMP Kristen Maranatha"}</small></span></div></div>
-        </header>
-        <div className={styles.studentContent}>
-          <section className={styles.studentSemester}><div><span aria-hidden="true">▦</span><b>SEMESTER AKTIF:</b><strong>Tahun ajaran belum diatur</strong></div><div><span aria-hidden="true">♙</span><b>SISWA:</b><strong>{student?.name || student?.email || "Memuat akun..."}</strong></div><time>{dateLabel}</time></section>
-          <ImportantAnnouncements announcements={announcements} loading={loading} />
-          <div id="informasi-sekolah"><SchoolVisionMission /></div>
-          <footer className={styles.studentFooter}>Portal Siswa · SD - SMP Kristen Maranatha · {student?.name || "Siswa"}</footer>
+        <div className={styles.studentTopbarActions}>
+          <span className={styles.studentDate}>{dateLabel}</span>
+          <div className={styles.studentProfile}>
+            <span className={styles.studentAvatar}>{initials}</span>
+            <span>
+              <b>{student?.name || "Siswa"}</b>
+              <small>{student?.grade || "SD - SMP Kristen Maranatha"}</small>
+            </span>
+          </div>
+          <button
+            type="button"
+            className={styles.studentLogoutTopbar}
+            onClick={logout}
+          >
+            Keluar
+          </button>
         </div>
-      </main>
+      </header>
+
+      {/* BODY: sidebar (left) + main content (right) */}
+      <div className={styles.shellBody}>
+        {isMobileOpen ? (
+          <div
+            className={styles.sidebarBackdrop}
+            onClick={closeMobile}
+            aria-hidden="true"
+          />
+        ) : null}
+
+        <aside
+          className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
+        >
+          <div className={styles.brandRow}>
+            <Link href="/portal-siswa" className={styles.studentBrand} title="SD - SMP Maranatha">
+              <span className={styles.studentBrandMark}>M</span>
+              {!isCollapsed || isMobileOpen ? <span>SD - SMP <b>Maranatha</b></span> : null}
+            </Link>
+            {isMobileOpen ? (
+              <button
+                type="button"
+                className={styles.mobileCloseDrawerBtn}
+                onClick={closeMobile}
+                aria-label="Tutup menu"
+              >
+                ×
+              </button>
+            ) : !isCollapsed ? (
+              <button
+                type="button"
+                className={styles.sidebarCollapseBtn}
+                onClick={toggleSidebar}
+                aria-label="Ciutkan menu sidebar"
+              >
+                «
+              </button>
+            ) : null}
+          </div>
+          {!isCollapsed || isMobileOpen ? (
+            <label className={styles.studentSearch}>
+              <span aria-hidden="true">⌕</span>
+              <input
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Cari menu..."
+                aria-label="Cari menu"
+              />
+              {search ? (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className={styles.searchClearBtn}
+                  aria-label="Hapus pencarian"
+                >
+                  ×
+                </button>
+              ) : null}
+            </label>
+          ) : null}
+          {!isCollapsed || isMobileOpen ? <p className={styles.studentMenuLabel}>MENU SISWA</p> : null}
+          <nav className={styles.studentNav} aria-label="Navigasi portal siswa">
+            {filteredMenus.map((menu) => (
+              <Link
+                key={menu.label}
+                href={menu.href}
+                className={`${styles.studentNavItem} ${menu.href === "/portal-siswa" ? styles.studentNavActive : ""}`}
+                title={isCollapsed && !isMobileOpen ? menu.label : undefined}
+                onClick={() => isMobileOpen && closeMobile()}
+              >
+                <span aria-hidden="true">{menu.icon}</span>
+                {!isCollapsed || isMobileOpen ? (
+                  <>
+                    <span className={styles.studentNavLabel}>{menu.label}</span>
+                    {menu.href.startsWith("/") ? (
+                      <span className={styles.studentNavArrow} aria-hidden="true">›</span>
+                    ) : null}
+                  </>
+                ) : null}
+              </Link>
+            ))}
+            {filteredMenus.length === 0 && (!isCollapsed || isMobileOpen) ? (
+              <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
+            ) : null}
+          </nav>
+          <div className={styles.studentSidebarBottom}>
+            <span className={styles.studentHelpIcon}>?</span>
+            {!isCollapsed || isMobileOpen ? (
+              <span>
+                <b>Butuh bantuan?</b>
+                <small>Hubungi wali kelas atau sekolah</small>
+              </span>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            className={styles.studentLogout}
+            onClick={logout}
+            title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
+          >
+            <span aria-hidden="true">↪</span>
+            {!isCollapsed || isMobileOpen ? " Keluar" : null}
+          </button>
+        </aside>
+
+        <main
+          className={`${styles.studentMain} ${isCollapsed ? styles.studentMainCollapsed : ""}`}
+        >
+          <div className={styles.studentContent}>
+            <section className={styles.studentSemester}>
+              <div>
+                <span aria-hidden="true">▦</span>
+                <b>SEMESTER AKTIF:</b>
+                <strong>Tahun ajaran belum diatur</strong>
+              </div>
+              <div>
+                <span aria-hidden="true">♙</span>
+                <b>SISWA:</b>
+                <strong>{student?.name || student?.email || "Memuat akun..."}</strong>
+              </div>
+              <time>{dateLabel}</time>
+            </section>
+            <ImportantAnnouncements announcements={announcements} loading={loading} />
+            <div id="informasi-sekolah"><SchoolVisionMission /></div>
+            <footer className={styles.studentFooter}>
+              Portal Siswa · SD - SMP Kristen Maranatha · {student?.name || "Siswa"}
+            </footer>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

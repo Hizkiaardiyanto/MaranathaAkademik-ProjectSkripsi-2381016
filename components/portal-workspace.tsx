@@ -395,7 +395,9 @@ export function PortalWorkspace({
           </button>
         </aside>
 
-        <main className={styles.studentMain}>
+        <main
+          className={`${styles.studentMain} ${isCollapsed ? styles.studentMainCollapsed : ""}`}
+        >
           <div className={styles.studentContent}>
           <section className={styles.studentSemester}>
             <div>

@@ -74,13 +74,19 @@ export async function POST(request: Request) {
 
   if (account.approvalStatus === "pending") {
     return NextResponse.json(
-      { error: "Pendaftaran siswa menunggu verifikasi administrator." },
+      { error: "Pendaftaran akun menunggu verifikasi administrator." },
       { status: 403 },
     );
   }
   if (account.approvalStatus === "rejected") {
     return NextResponse.json(
-      { error: "Pendaftaran akun siswa tidak disetujui." },
+      { error: "Pendaftaran akun tidak disetujui oleh administrator." },
+      { status: 403 },
+    );
+  }
+  if (account.approvalStatus === "inactive") {
+    return NextResponse.json(
+      { error: "Akun ini telah dinonaktifkan oleh administrator. Silakan hubungi admin sekolah." },
       { status: 403 },
     );
   }

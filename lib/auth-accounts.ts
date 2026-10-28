@@ -3,6 +3,7 @@ import pool from "./db";
 import { hashPassword } from "./password";
 
 export type AuthAccount = {
+  id?: string;
   email: string;
   aliases?: string[];
   password?: string;
@@ -11,19 +12,22 @@ export type AuthAccount = {
   name?: string;
   grade?: string;
   subject?: string;
-  approvalStatus?: "pending" | "approved" | "rejected";
+  approvalStatus?: "pending" | "approved" | "rejected" | "inactive";
   studentId?: string;
+  teacherId?: string;
 };
 
 type RegisteredAccountRow = RowDataPacket & {
+  id?: number | string;
   email: string;
   password_hash: string;
-  role: "Siswa" | "Guru";
+  role: "Siswa" | "Guru" | "Administrator" | "Kepala Sekolah";
   name: string;
   grade: string | null;
   subject: string | null;
-  approval_status: "pending" | "approved" | "rejected";
+  approval_status: "pending" | "approved" | "rejected" | "inactive";
   student_id: string | null;
+  teacher_id?: string | null;
 };
 
 export type NewRegisteredAccount = {
@@ -72,12 +76,13 @@ export async function getRegisteredAuthAccount(
   email: string,
 ): Promise<AuthAccount | undefined> {
   const [rows] = await pool.execute<RegisteredAccountRow[]>(
-    "SELECT email, password_hash, role, name, grade, subject, approval_status, student_id FROM portal_accounts WHERE email = ? LIMIT 1",
+    "SELECT id, email, password_hash, role, name, grade, subject, approval_status, student_id FROM portal_accounts WHERE email = ? LIMIT 1",
     [email.trim().toLowerCase()],
   );
   const row = rows[0];
   if (!row) return undefined;
   return {
+    id: String(row.id ?? ""),
     email: row.email,
     passwordHash: row.password_hash,
     role: row.role,
