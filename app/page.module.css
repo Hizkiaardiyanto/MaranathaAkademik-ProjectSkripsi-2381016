@@ -16,8 +16,10 @@
 }
 
 .sidebar {
-  width: 260px;
-  min-width: 260px;
+  width: 270px;
+  min-width: 270px;
+  max-width: 270px;
+  box-sizing: border-box;
   flex-shrink: 0;
   background: #fff;
   padding: 16px 14px 24px;
@@ -479,11 +481,12 @@
   display: flex;
   align-items: center;
   align-self: stretch;
-  gap: 6px;
+  gap: 8px;
   height: 100%;
-  width: 260px;
-  min-width: 260px;
-  padding: 0 8px 0 12px;
+  width: 270px;
+  min-width: 270px;
+  max-width: 270px;
+  padding: 0 10px 0 14px;
   background: #198caf;
   color: #ffffff;
   flex-shrink: 0;
@@ -505,11 +508,14 @@
 }
 
 .headerBrandTitle {
-  font: 800 12.5px "Plus Jakarta Sans", sans-serif;
+  font: 800 12px/1.2 "Plus Jakarta Sans", sans-serif;
   color: #ffffff;
   white-space: nowrap;
-  letter-spacing: 0.1px;
+  letter-spacing: 0;
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .headerHamburgerBtn {
@@ -2021,10 +2027,12 @@
   top: 64px;
   z-index: 40;
   display: flex;
-  flex: 0 0 260px;
+  flex: 0 0 270px;
   flex-direction: column;
-  width: 260px;
-  min-width: 260px;
+  width: 270px;
+  min-width: 270px;
+  max-width: 270px;
+  box-sizing: border-box;
   height: calc(100vh - 64px);
   padding: 16px 14px 24px;
   overflow-y: auto;
@@ -3537,9 +3545,17 @@
     top: 64px !important;
     height: calc(100vh - 64px) !important;
     flex-shrink: 0 !important;
-    width: 260px !important;
-    min-width: 260px !important;
     align-self: flex-start !important;
+  }
+
+  /* Lebar 270px hanya saat sidebar TERBUKA. Saat ditutup, lebar tetap 0
+     (dari .sidebarCollapsed) sehingga konten melebar penuh. */
+  .sidebar:not(.sidebarCollapsed),
+  .studentSidebar:not(.studentSidebarCollapsed) {
+    width: 270px !important;
+    min-width: 270px !important;
+    max-width: 270px !important;
+    box-sizing: border-box !important;
   }
 
   .mainContent,
@@ -3548,7 +3564,8 @@
     min-width: 0 !important;
     width: auto !important;
     margin-left: 0 !important;
-    max-width: calc(100% - 260px) !important;
+    max-width: calc(100% - 270px) !important;
+    box-sizing: border-box !important;
   }
 
   .sidebarCollapsed + .mainContent,

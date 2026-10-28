@@ -2,217 +2,534 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import styles from "../../app/page.module.css";
 import { SchoolVisionMission } from "../../components/school-vision-mission";
-import { sessionMarkerKey } from "../../lib/browser-session";
-import { useSidebarCollapse } from "../../lib/use-sidebar-collapse";
-import { ImportantAnnouncements } from "./important-announcements";
+import { PortalShell } from "../../components/portal-shell";
 import { studentPortalMenu } from "./student-portal-menu";
-import type { ImportantAnnouncement, StudentSession } from "./types";
+import type { StudentSession } from "./types";
 
 function formatDate() {
-  return new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "short", year: "numeric" }).format(new Date());
+  return new Intl.DateTimeFormat("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date());
 }
 
 export function StudentPortalDashboard() {
-  const router = useRouter();
   const [student, setStudent] = useState<StudentSession | null>(null);
-  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  // The announcements component is intentionally data-ready. Connect this state
-  // to an announcements API once the school publishing source is available.
-  const [announcements] = useState<ImportantAnnouncement[]>([]);
-  const { isCollapsed, isMobileOpen, toggleSidebar, closeMobile } = useSidebarCollapse("maranatha_student_sidebar_collapsed");
+  const [attendanceCount, setAttendanceCount] = useState({ hadir: 0, izin: 0, sakit: 0, alpa: 0 });
+  const [gradesCount, setGradesCount] = useState(0);
+  const [todaySchedules, setTodaySchedules] = useState<Array<{ id: string; jam: string; mapel: string; guru: string; ruang: string }>>([]);
+
   const dateLabel = formatDate();
-  const filteredMenus = studentPortalMenu.filter((menu) => menu.label.toLowerCase().includes(search.trim().toLowerCase()));
-  const initials = (student?.name || "Siswa").split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 
   useEffect(() => {
     let active = true;
-    async function loadSession() {
+    async function loadData() {
       try {
-        const response = await fetch("/api/session");
-        if (response.ok && active) setStudent((await response.json()) as StudentSession);
+        const [sessionRes, attendanceRes, gradesRes, scheduleRes] = await Promise.all([
+          fetch("/api/session"),
+          fetch("/api/portal-data/attendance"),
+          fetch("/api/portal-data/grades"),
+          fetch("/api/portal-data/schedules"),
+        ]);
+
+        if (sessionRes.ok && active) {
+          setStudent((await sessionRes.json()) as StudentSession);
+        }
+
+        if (attendanceRes.ok && active) {
+          const att = (await attendanceRes.json()) as Array<{ status: string }>;
+          if (Array.isArray(att)) {
+            const h = att.filter((a) => a.status?.toLowerCase() === "hadir").length;
+            const i = att.filter((a) => a.status?.toLowerCase() === "izin").length;
+            const s = att.filter((a) => a.status?.toLowerCase() === "sakit").length;
+            const al = att.filter((a) => a.status?.toLowerCase() === "alpa").length;
+            setAttendanceCount({ hadir: h, izin: i, sakit: s, alpa: al });
+          }
+        }
+
+        if (gradesRes.ok && active) {
+          const g = (await gradesRes.json()) as Array<{ nilai: number }>;
+          if (Array.isArray(g)) {
+            setGradesCount(g.length);
+          }
+        }
+
+        if (scheduleRes.ok && active) {
+          const sch = (await scheduleRes.json()) as Array<{ id: string; jam: string; mapel: string; guru: string; ruang: string }>;
+          if (Array.isArray(sch)) {
+            setTodaySchedules(sch.slice(0, 4));
+          }
+        }
+      } catch {
+        // Fallback gracefully
       } finally {
         if (active) setLoading(false);
       }
     }
-    void loadSession();
-    return () => { active = false; };
+
+    void loadData();
+    return () => {
+      active = false;
+    };
   }, []);
 
-  async function logout() {
-    window.sessionStorage.removeItem(sessionMarkerKey);
-    try { await fetch("/api/logout", { method: "POST" }); }
-    finally { router.replace("/login/siswa"); router.refresh(); }
-  }
-
   return (
-    <div className={styles.studentDashboard} id="overview">
-      {/* TOPBAR: always full-width at the top */}
-      <header className={styles.studentTopbar}>
-        <div className={styles.headerBrandBlock}>
-          <span className={styles.headerBrandLogo}>M</span>
-          <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
-          <button
-            type="button"
-            className={styles.headerHamburgerBtn}
-            onClick={toggleSidebar}
-            aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
-            title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
-          >
-            ☰
-          </button>
-        </div>
-        <div className={styles.studentTopbarActions}>
-          <span className={styles.studentDate}>{dateLabel}</span>
-          <div className={styles.studentProfile}>
-            <span className={styles.studentAvatar}>{initials}</span>
-            <span>
-              <b>{student?.name || "Siswa"}</b>
-              <small>{student?.grade || "SD - SMP Kristen Maranatha"}</small>
+    <PortalShell
+      role="Siswa"
+      title="Portal Siswa"
+      subtitle="Akses Informasi Akademik Siswa"
+      activeItem="Dashboard"
+      activeHref="/portal-siswa"
+      navItems={studentPortalMenu}
+      session={student}
+    >
+      <section className={styles.page}>
+        {/* 1. WELCOME HERO BANNER */}
+        <div
+          style={{
+            background: "linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #38bdf8 100%)",
+            borderRadius: "16px",
+            padding: "28px 32px",
+            color: "#ffffff",
+            marginBottom: "24px",
+            boxShadow: "0 10px 25px -5px rgba(37, 99, 235, 0.25)",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          <div style={{ position: "relative", zIndex: 2 }}>
+            <span
+              style={{
+                display: "inline-block",
+                padding: "4px 12px",
+                borderRadius: "20px",
+                background: "rgba(255, 255, 255, 0.2)",
+                fontSize: "12px",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                marginBottom: "10px",
+              }}
+            >
+              PORTAL AKADEMIK SISWA
             </span>
-          </div>
-          <button
-            type="button"
-            className={styles.studentLogoutTopbar}
-            onClick={logout}
-          >
-            Keluar
-          </button>
-        </div>
-      </header>
-
-      {/* BODY: sidebar (left) + main content (right) */}
-      <div className={styles.shellBody}>
-        {isMobileOpen ? (
-          <div
-            className={styles.sidebarBackdrop}
-            onClick={closeMobile}
-            aria-hidden="true"
-          />
-        ) : null}
-
-        <aside
-          className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
-        >
-          <div className={styles.brandRow}>
-            <Link href="/portal-siswa" className={styles.studentBrand} title="SD - SMP Maranatha">
-              <span className={styles.studentBrandMark}>M</span>
-              {!isCollapsed || isMobileOpen ? <span>SD - SMP <b>Maranatha</b></span> : null}
-            </Link>
-            {isMobileOpen ? (
-              <button
-                type="button"
-                className={styles.mobileCloseDrawerBtn}
-                onClick={closeMobile}
-                aria-label="Tutup menu"
-              >
-                ×
-              </button>
-            ) : !isCollapsed ? (
-              <button
-                type="button"
-                className={styles.sidebarCollapseBtn}
-                onClick={toggleSidebar}
-                aria-label="Ciutkan menu sidebar"
-              >
-                «
-              </button>
-            ) : null}
-          </div>
-          {!isCollapsed || isMobileOpen ? (
-            <label className={styles.studentSearch}>
-              <span aria-hidden="true">⌕</span>
-              <input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Cari menu..."
-                aria-label="Cari menu"
-              />
-              {search ? (
-                <button
-                  type="button"
-                  onClick={() => setSearch("")}
-                  className={styles.searchClearBtn}
-                  aria-label="Hapus pencarian"
-                >
-                  ×
-                </button>
-              ) : null}
-            </label>
-          ) : null}
-          {!isCollapsed || isMobileOpen ? <p className={styles.studentMenuLabel}>MENU SISWA</p> : null}
-          <nav className={styles.studentNav} aria-label="Navigasi portal siswa">
-            {filteredMenus.map((menu) => (
-              <Link
-                key={menu.label}
-                href={menu.href}
-                className={`${styles.studentNavItem} ${menu.href === "/portal-siswa" ? styles.studentNavActive : ""}`}
-                title={isCollapsed && !isMobileOpen ? menu.label : undefined}
-                onClick={() => isMobileOpen && closeMobile()}
-              >
-                <span aria-hidden="true">{menu.icon}</span>
-                {!isCollapsed || isMobileOpen ? (
-                  <>
-                    <span className={styles.studentNavLabel}>{menu.label}</span>
-                    {menu.href.startsWith("/") ? (
-                      <span className={styles.studentNavArrow} aria-hidden="true">›</span>
-                    ) : null}
-                  </>
-                ) : null}
-              </Link>
-            ))}
-            {filteredMenus.length === 0 && (!isCollapsed || isMobileOpen) ? (
-              <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
-            ) : null}
-          </nav>
-          <div className={styles.studentSidebarBottom}>
-            <span className={styles.studentHelpIcon}>?</span>
-            {!isCollapsed || isMobileOpen ? (
-              <span>
-                <b>Butuh bantuan?</b>
-                <small>Hubungi wali kelas atau sekolah</small>
+            <h1 style={{ margin: "0 0 8px", fontSize: "26px", fontWeight: 800 }}>
+              Halo, {student?.name || "Siswa Maranatha"}! 👋
+            </h1>
+            <p style={{ margin: "0 0 16px", opacity: 0.9, fontSize: "14px", maxWidth: "680px", lineHeight: 1.5 }}>
+              Selamat datang di Portal Siswa SD - SMP Maranatha. Portal ini disediakan khusus untuk memudahkan Anda mengakses seluruh informasi akademik Anda secara mandiri, cepat, dan transparan.
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "16px", fontSize: "13px" }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                📅 <b>Hari ini:</b> {dateLabel}
               </span>
-            ) : null}
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                🏫 <b>Kelas:</b> {student?.grade || "Siswa SD - SMP Kristen Maranatha"}
+              </span>
+              <span style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                ✓ <b>Status Akun:</b> Aktif
+              </span>
+            </div>
           </div>
-          <button
-            type="button"
-            className={styles.studentLogout}
-            onClick={logout}
-            title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
-          >
-            <span aria-hidden="true">↪</span>
-            {!isCollapsed || isMobileOpen ? " Keluar" : null}
-          </button>
-        </aside>
+        </div>
 
-        <main
-          className={`${styles.studentMain} ${isCollapsed ? styles.studentMainCollapsed : ""}`}
-        >
-          <div className={styles.studentContent}>
-            <section className={styles.studentSemester}>
-              <div>
-                <span aria-hidden="true">▦</span>
-                <b>SEMESTER AKTIF:</b>
-                <strong>Tahun ajaran belum diatur</strong>
-              </div>
-              <div>
-                <span aria-hidden="true">♙</span>
-                <b>SISWA:</b>
-                <strong>{student?.name || student?.email || "Memuat akun..."}</strong>
-              </div>
-              <time>{dateLabel}</time>
-            </section>
-            <ImportantAnnouncements announcements={announcements} loading={loading} />
-            <div id="informasi-sekolah"><SchoolVisionMission /></div>
-            <footer className={styles.studentFooter}>
-              Portal Siswa · SD - SMP Kristen Maranatha · {student?.name || "Siswa"}
-            </footer>
+        {/* 2. FITUR UTAMA PORTAL SISWA (5 POIN UTAMA) */}
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ marginBottom: "14px" }}>
+            <h2 style={{ fontSize: "18px", fontWeight: 800, color: "#1e293b", margin: 0 }}>
+              Akses Informasi Akademik Siswa
+            </h2>
+            <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: "13px" }}>
+              Pilih menu di bawah ini untuk melihat jadwal, absensi, nilai, rapor digital, dan profil sekolah.
+            </p>
           </div>
-        </main>
-      </div>
-    </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            {/* FITUR 1: Melihat Jadwal Pelajaran */}
+            <Link
+              href="/portal-siswa/jadwal"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "20px",
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "10px",
+                    background: "#eff6ff",
+                    color: "#2563eb",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    marginBottom: "14px",
+                  }}
+                >
+                  ◷
+                </div>
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  Melihat Jadwal Pelajaran
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.4 }}>
+                  Periksa jadwal mata pelajaran harian, waktu sesi, ruang kelas, dan nama guru pengajar.
+                </p>
+              </div>
+              <div
+                style={{
+                  marginTop: "16px",
+                  paddingTop: "12px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  color: "#2563eb",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                }}
+              >
+                <span>Buka Jadwal</span>
+                <span>→</span>
+              </div>
+            </Link>
+
+            {/* FITUR 2: Melihat Absensi */}
+            <Link
+              href="/portal-siswa/absensi"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "20px",
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "10px",
+                    background: "#ecfdf5",
+                    color: "#059669",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    marginBottom: "14px",
+                  }}
+                >
+                  ✓
+                </div>
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  Melihat Absensi Siswa
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.4 }}>
+                  Pantau rekap kehadiran harian: status Hadir, Izin, Sakit, atau Alpa secara langsung.
+                </p>
+              </div>
+              <div
+                style={{
+                  marginTop: "16px",
+                  paddingTop: "12px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  color: "#059669",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                }}
+              >
+                <span>
+                  {loading ? "Memuat..." : `${attendanceCount.hadir} Hadir · ${attendanceCount.izin + attendanceCount.sakit} Izin/Sakit`}
+                </span>
+                <span>→</span>
+              </div>
+            </Link>
+
+            {/* FITUR 3: Melihat Nilai */}
+            <Link
+              href="/portal-siswa/nilai"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "20px",
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "10px",
+                    background: "#fff7ed",
+                    color: "#ea580c",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    marginBottom: "14px",
+                  }}
+                >
+                  ▤
+                </div>
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  Melihat Nilai Akademik
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.4 }}>
+                  Lihat rincian nilai tugas harian, Penilaian Tengah Semester (PTS), dan Penilaian Akhir Semester (PAS).
+                </p>
+              </div>
+              <div
+                style={{
+                  marginTop: "16px",
+                  paddingTop: "12px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  color: "#ea580c",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                }}
+              >
+                <span>{loading ? "Memuat..." : `${gradesCount} Rekaman Nilai`}</span>
+                <span>→</span>
+              </div>
+            </Link>
+
+            {/* FITUR 4: Melihat Rapor jika sudah tersedia secara digital */}
+            <Link
+              href="/portal-siswa/rapor"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "20px",
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "10px",
+                    background: "#faf5ff",
+                    color: "#7e22ce",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    marginBottom: "14px",
+                  }}
+                >
+                  ▧
+                </div>
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  Melihat Rapor Digital
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.4 }}>
+                  Akses laporan hasil belajar siswa semester berjalan jika sudah diterbitkan secara digital oleh sekolah.
+                </p>
+              </div>
+              <div
+                style={{
+                  marginTop: "16px",
+                  paddingTop: "12px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  color: "#7e22ce",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                }}
+              >
+                <span>Lihat Status Rapor</span>
+                <span>→</span>
+              </div>
+            </Link>
+
+            {/* FITUR 5: Melihat Informasi Sekolah */}
+            <Link
+              href="/portal-siswa/informasi-sekolah"
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "20px",
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    width: "44px",
+                    height: "44px",
+                    borderRadius: "10px",
+                    background: "#ecfeff",
+                    color: "#0891b2",
+                    display: "grid",
+                    placeItems: "center",
+                    fontSize: "20px",
+                    fontWeight: 800,
+                    marginBottom: "14px",
+                  }}
+                >
+                  ⓘ
+                </div>
+                <h3 style={{ margin: "0 0 6px", fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>
+                  Melihat Informasi Sekolah
+                </h3>
+                <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.4 }}>
+                  Informasi resmi, profil, visi & misi, serta kontak layanan administrasi SD - SMP Maranatha.
+                </p>
+              </div>
+              <div
+                style={{
+                  marginTop: "16px",
+                  paddingTop: "12px",
+                  borderTop: "1px solid #f1f5f9",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  color: "#0891b2",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                }}
+              >
+                <span>Buka Informasi</span>
+                <span>→</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+
+        {/* 3. JADWAL HARI INI & PENGUMUMAN */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px", marginBottom: "24px" }}>
+          {/* Jadwal Pelajaran Singkat */}
+          <div className={styles.panel}>
+            <div className={styles.panelTitle} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <h3>Jadwal Pelajaran Terdekat</h3>
+                <p>Pratinjau jadwal belajar kelas Anda</p>
+              </div>
+              <Link href="/portal-siswa/jadwal" style={{ fontSize: "13px", fontWeight: 700, color: "#2563eb", textDecoration: "none" }}>
+                Lihat Semua Jadwal →
+              </Link>
+            </div>
+            {todaySchedules.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                {todaySchedules.map((item, idx) => (
+                  <div
+                    key={item.id || idx}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      background: "#f8fafc",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div>
+                      <b style={{ color: "#1e293b", fontSize: "14px" }}>{item.mapel}</b>
+                      <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                        Guru: {item.guru} · Ruang: {item.ruang || "-"}
+                      </div>
+                    </div>
+                    <span style={{ fontSize: "12px", fontWeight: 700, color: "#2563eb", background: "#eff6ff", padding: "4px 8px", borderRadius: "6px" }}>
+                      {item.jam}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p style={{ color: "#64748b", fontSize: "13px", margin: "8px 0" }}>
+                {loading ? "Memuat jadwal..." : "Tidak ada jadwal pelajaran yang tercatat saat ini."}
+              </p>
+            )}
+          </div>
+
+          {/* Visi Misi / Profil Singkat */}
+          <div className={styles.panel}>
+            <div className={styles.panelTitle}>
+              <div>
+                <h3>Profil & Visi Misi Sekolah</h3>
+                <p>SD - SMP Kristen Maranatha</p>
+              </div>
+            </div>
+            <p style={{ fontSize: "13px", color: "#475569", lineHeight: 1.6, margin: 0 }}>
+              Membentuk generasi peserta didik yang takut akan Tuhan, berkarakter unggul, berilmu pengetahuan tinggi, dan siap melayani sesama dengan penuh kasih dan integritas.
+            </p>
+            <div style={{ marginTop: "16px" }}>
+              <Link
+                href="/portal-siswa/informasi-sekolah"
+                style={{
+                  display: "inline-block",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  background: "#f1f5f9",
+                  color: "#334155",
+                  fontWeight: 600,
+                  fontSize: "13px",
+                  textDecoration: "none",
+                }}
+              >
+                Lihat Informasi Sekolah Selengkapnya →
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* 4. VISI DAN MISI LENGKAP */}
+        <SchoolVisionMission />
+      </section>
+    </PortalShell>
   );
 }

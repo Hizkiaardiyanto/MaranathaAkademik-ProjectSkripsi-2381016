@@ -3,14 +3,13 @@
 import { useEffect, useState, useCallback } from "react";
 
 export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
-  const [isCollapsed, setIsCollapsed] = useState(true);
+  // Default TERBUKA agar sidebar tidak berkedip saat pindah halaman.
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Defer restoration until after paint so SSR/hydration stays deterministic.
+    // Pulihkan pilihan terakhir pengguna setelah paint agar hydration tetap deterministik.
     const restoreFrame = window.requestAnimationFrame(() => {
-      setMounted(true);
       try {
         const saved = localStorage.getItem(storageKey);
         if (saved !== null) setIsCollapsed(saved === "true");
@@ -52,11 +51,10 @@ export function useSidebarCollapse(storageKey = "maranatha_sidebar_collapsed") {
   }, []);
 
   return {
-    isCollapsed: mounted ? isCollapsed : true,
+    isCollapsed,
     isMobileOpen,
     toggleSidebar,
     closeMobile,
     setIsCollapsed,
   };
 }
-

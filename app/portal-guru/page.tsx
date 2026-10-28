@@ -2,37 +2,25 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { sessionMarkerKey } from "../../lib/browser-session";
 import styles from "../page.module.css";
 import { SchoolVisionMission } from "../../components/school-vision-mission";
 import { OfficialScheduleBoard } from "../../components/official-schedule-board";
-import { useSidebarCollapse } from "../../lib/use-sidebar-collapse";
+import { PortalShell } from "../../components/portal-shell";
+import { teacherPortalMenu } from "../../features/student-portal/student-portal-menu";
 import { getApiErrorMessage } from "../../lib/api-error";
 
 type TeacherSession = { name: string; email: string; subject: string };
 type PortalRecord = { id: string; [key: string]: string | number };
 
-const menu = [
-  ["Dashboard", "/portal-guru", "⌂"],
-  ["Jadwal Mengajar", "/portal-guru/jadwal", "▦"],
-  ["Kelas Mapel", "/portal-guru/kelas", "▤"],
-  ["Absensi Siswa", "/portal-guru/kehadiran", "✓"],
-  ["Input Nilai", "/portal-guru/nilai", "◷"],
-  ["Mata Pelajaran", "/portal-guru/mata-pelajaran", "◈"],
-];
-
 export default function TeacherPortalPage() {
-  const router = useRouter();
   const [teacher, setTeacher] = useState<TeacherSession | null>(null);
   const [schedules, setSchedules] = useState<PortalRecord[]>([]);
   const [classes, setClasses] = useState<PortalRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  const [dashboardScheduleMode, setDashboardScheduleMode] = useState<"official" | "list">("official");
-  const { isCollapsed, isMobileOpen, toggleSidebar, closeMobile } =
-    useSidebarCollapse("maranatha_teacher_sidebar_collapsed");
-  const [menuSearch, setMenuSearch] = useState("");
+  const [dashboardScheduleMode, setDashboardScheduleMode] = useState<
+    "official" | "list"
+  >("official");
 
   useEffect(() => {
     let active = true;
@@ -112,383 +100,343 @@ export default function TeacherPortalPage() {
     };
   }, []);
 
-  async function logout() {
-    window.sessionStorage.removeItem(sessionMarkerKey);
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } finally {
-      router.replace("/login/guru");
-      router.refresh();
-    }
-  }
-
-  const initials = (teacher?.name || "Guru")
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase();
-
-  const filteredMenu = menu.filter(([label]) =>
-    label.toLowerCase().includes(menuSearch.trim().toLowerCase()),
-  );
-
   return (
-    <div className={styles.studentDashboard}>
-      {/* TOPBAR: always full-width at the top */}
-      <header className={styles.studentTopbar}>
-        <div className={styles.headerBrandBlock}>
-          <span className={styles.headerBrandLogo}>M</span>
-          <span className={styles.headerBrandTitle}>SD - SMP Maranatha</span>
-          <button
-            type="button"
-            className={styles.headerHamburgerBtn}
-            onClick={toggleSidebar}
-            aria-label={isCollapsed ? "Buka menu sidebar" : "Ciutkan menu sidebar"}
-            title={isCollapsed ? "Buka menu sidebar (Expand)" : "Ciutkan menu sidebar (Collapse)"}
+    <PortalShell
+      role="Guru"
+      title="Portal Guru"
+      subtitle="Pengelolaan Akademik & Jadwal Mengajar"
+      activeItem="Dashboard"
+      activeHref="/portal-guru"
+      navItems={teacherPortalMenu}
+      session={teacher}
+    >
+      <section className={styles.page}>
+        {/* WELCOME BANNER GURU */}
+        <div
+          style={{
+            background: "linear-gradient(135deg, #065f46 0%, #059669 60%, #10b981 100%)",
+            borderRadius: "16px",
+            padding: "26px 32px",
+            color: "#ffffff",
+            marginBottom: "24px",
+            boxShadow: "0 10px 25px -5px rgba(5, 150, 105, 0.25)",
+          }}
+        >
+          <span
+            style={{
+              display: "inline-block",
+              padding: "4px 12px",
+              borderRadius: "20px",
+              background: "rgba(255, 255, 255, 0.2)",
+              fontSize: "12px",
+              fontWeight: 700,
+              letterSpacing: "0.5px",
+              marginBottom: "10px",
+            }}
           >
-            ☰
-          </button>
+            PORTAL TENAGA PENDIDIK
+          </span>
+          <h1 style={{ margin: "0 0 8px", fontSize: "24px", fontWeight: 800 }}>
+            Selamat Datang, {teacher?.name || "Bapak/Ibu Guru"}!
+          </h1>
+          <p style={{ margin: 0, opacity: 0.9, fontSize: "14px", lineHeight: 1.5 }}>
+            Mata Pelajaran: <b>{teacher?.subject || "Semua Mata Pelajaran"}</b> · SD - SMP Kristen Maranatha
+          </p>
         </div>
-        <div className={styles.studentTopbarActions}>
-          <div className={styles.studentProfile}>
-            <span className={styles.studentAvatar}>{initials}</span>
-            <span>
-              <b>{teacher?.name || "Guru"}</b>
-              <small>{teacher?.subject || "Mata pelajaran"}</small>
-            </span>
-          </div>
-          <button
-            type="button"
-            className={styles.studentLogoutTopbar}
-            onClick={logout}
-          >
-            Keluar
-          </button>
-        </div>
-      </header>
 
-      {/* BODY: sidebar (left) + main content (right) */}
-      <div className={styles.shellBody}>
-        {isMobileOpen && (
-          <div
-            className={styles.sidebarBackdrop}
-            onClick={closeMobile}
-            aria-hidden="true"
-          />
+        {loadError && (
+          <p className={styles.portalFormError} role="alert">
+            {loadError}
+          </p>
         )}
 
-        <aside
-          className={`${styles.studentSidebar} ${isCollapsed ? styles.studentSidebarCollapsed : ""} ${isMobileOpen ? styles.studentSidebarMobileOpen : ""}`}
-        >
-          <div className={styles.brandRow}>
-            <Link href="/portal-guru" className={styles.studentBrand} title="SD - SMP Maranatha">
-              <span className={styles.studentBrandMark}>M</span>
-              {(!isCollapsed || isMobileOpen) && (
-                <span>
-                  SD - SMP <b>Maranatha</b>
-                </span>
-              )}
-            </Link>
-            {isMobileOpen ? (
-              <button
-                type="button"
-                className={styles.mobileCloseDrawerBtn}
-                onClick={closeMobile}
-                title="Tutup menu"
-                aria-label="Tutup menu"
-              >
-                ×
-              </button>
-            ) : !isCollapsed ? (
-              <button
-                type="button"
-                className={styles.sidebarCollapseBtn}
-                onClick={toggleSidebar}
-                title="Ciutkan menu sidebar (Collapse)"
-                aria-label="Ciutkan menu sidebar"
-              >
-                «
-              </button>
-            ) : null}
-          </div>
+        {/* METRICS GRID GURU */}
+        <div className={styles.statsGrid} style={{ marginBottom: "24px" }}>
+          <article className={`${styles.statCard} ${styles.blue}`}>
+            <div className={styles.statIcon}>▦</div>
+            <div>
+              <p>Kelas Ditugaskan</p>
+              <h2>{classes.length}</h2>
+              <span>Kelas rombel aktif</span>
+            </div>
+          </article>
 
-          {(!isCollapsed || isMobileOpen) && (
-            <label className={styles.studentSearch} style={{ marginBottom: "12px" }}>
-              <span aria-hidden="true">⌕</span>
-              <input
-                value={menuSearch}
-                onChange={(e) => setMenuSearch(e.target.value)}
-                placeholder="Cari menu (min. 2 karakter)..."
-                aria-label="Cari menu"
-              />
-              {menuSearch && (
-                <button
-                  type="button"
-                  onClick={() => setMenuSearch("")}
-                  className={styles.searchClearBtn}
-                  title="Hapus pencarian"
+          <article className={`${styles.statCard} ${styles.purple}`}>
+            <div className={styles.statIcon}>◷</div>
+            <div>
+              <p>Jadwal Mengajar</p>
+              <h2>{schedules.length}</h2>
+              <span>Sesi per minggu</span>
+            </div>
+          </article>
+
+          <article className={`${styles.statCard} ${styles.orange}`}>
+            <div className={styles.statIcon}>✓</div>
+            <div>
+              <p>Absensi Siswa</p>
+              <h2 style={{ fontSize: "18px", marginTop: "4px" }}>
+                <Link
+                  href="/portal-guru/absensi"
+                  style={{ color: "inherit", textDecoration: "underline" }}
                 >
-                  ×
-                </button>
-              )}
-            </label>
-          )}
+                  Catat Kehadiran →
+                </Link>
+              </h2>
+              <span>Input presensi siswa</span>
+            </div>
+          </article>
 
-          {(!isCollapsed || isMobileOpen) && <p className={styles.studentMenuLabel}>MENU GURU</p>}
+          <article className={`${styles.statCard} ${styles.yellow}`}>
+            <div className={styles.statIcon}>▤</div>
+            <div>
+              <p>Pengelolaan Nilai</p>
+              <h2 style={{ fontSize: "18px", marginTop: "4px" }}>
+                <Link
+                  href="/portal-guru/nilai"
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  Input Nilai Mapel →
+                </Link>
+              </h2>
+              <span>Tugas, UTS & UAS</span>
+            </div>
+          </article>
+        </div>
 
-          <nav className={styles.studentNav} aria-label="Navigasi portal guru">
-            {filteredMenu.map(([label, href, icon]) => (
-              <Link
-                key={href}
-                href={href}
-                className={`${styles.studentNavItem} ${href === "/portal-guru" ? styles.studentNavActive : ""}`}
-                data-tooltip={label}
-                title={isCollapsed && !isMobileOpen ? label : undefined}
-                onClick={() => {
-                  if (isMobileOpen) closeMobile();
-                }}
-              >
-                <span aria-hidden="true">{icon}</span>
-                {(!isCollapsed || isMobileOpen) && (
-                  <>
-                    <span className={styles.studentNavLabel}>{label}</span>
-                    <span className={styles.studentNavArrow} aria-hidden="true">
-                      ›
-                    </span>
-                  </>
-                )}
-              </Link>
-            ))}
-            {filteredMenu.length === 0 && (!isCollapsed || isMobileOpen) && (
-              <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
-            )}
-          </nav>
-
-          <div className={styles.studentSidebarBottom}>
-            <span className={styles.studentHelpIcon} title="Butuh bantuan?">
-              ?
-            </span>
-            {(!isCollapsed || isMobileOpen) && (
-              <span>
-                <b>Butuh bantuan?</b>
-                <small>Hubungi administrasi sekolah</small>
-              </span>
-            )}
-          </div>
-          <button
-            type="button"
-            className={styles.studentLogout}
-            onClick={logout}
-            title={isCollapsed && !isMobileOpen ? "Keluar" : undefined}
+        {/* JADWAL PELAJARAN / MENGAJAR */}
+        <div className={styles.panel} style={{ marginBottom: "24px" }}>
+          <div
+            className={styles.panelTitle}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "12px",
+            }}
           >
-            <span aria-hidden="true">↪</span>
-            {(!isCollapsed || isMobileOpen) && " Keluar"}
-          </button>
-        </aside>
-
-        <main
-          className={`${styles.studentMain} ${isCollapsed ? styles.studentMainCollapsed : ""}`}
-        >
-          <div className={styles.studentContent}>
-            <section className={styles.studentSemester}>
             <div>
-              <span aria-hidden="true">◈</span>
-              <b>MATA PELAJARAN:</b>
-              <strong>{teacher?.subject || "Memuat data..."}</strong>
-            </div>
-            <div>
-              <span aria-hidden="true">♟</span>
-              <b>GURU:</b>
-              <strong>{teacher?.name || "Memuat data..."}</strong>
-            </div>
-          </section>
-
-          {loadError ? (
-            <p className={styles.portalFormError} role="alert">
-              {loadError}
-            </p>
-          ) : null}
-
-          <section className={styles.studentMetricGrid}>
-            <div className={styles.studentMetric}>
-              <strong>{classes.length}</strong>
-              <b>Kelas Mapel</b>
-              <small>Kelas yang ditugaskan</small>
-            </div>
-            <div className={styles.studentMetric}>
-              <strong>{schedules.length}</strong>
-              <b>Jadwal Mengajar</b>
-              <small>Sesuai mata pelajaran Anda</small>
+              <h3>Jadwal Pelajaran & Mengajar Guru</h3>
+              <p>Jadwal pengajaran resmi sesuai dokumen sekolah</p>
             </div>
             <Link
-              href="/portal-guru/kehadiran"
-              className={styles.studentMetric}
+              href="/portal-guru/jadwal"
+              style={{
+                fontSize: "13px",
+                fontWeight: 700,
+                color: "#059669",
+                textDecoration: "none",
+              }}
             >
-              <span className={styles.studentMetricIcon}>✓</span>
-              <b>Absensi Siswa</b>
-              <small>Catat kehadiran kelas</small>
+              Buka Jadwal Lengkap →
             </Link>
-            <Link href="/portal-guru/nilai" className={styles.studentMetric}>
-              <span className={styles.studentMetricIcon}>◷</span>
-              <b>Input Nilai</b>
-              <small>Nilai mapel Anda</small>
-            </Link>
-          </section>
+          </div>
 
-          <section className={styles.studentPanel} style={{ marginBottom: "20px" }}>
-            <div className={styles.studentPanelHeading}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
+            <button
+              type="button"
+              style={{
+                padding: "7px 16px",
+                borderRadius: "6px",
+                border: "none",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+                background:
+                  dashboardScheduleMode === "official" ? "#059669" : "#f1f5f9",
+                color:
+                  dashboardScheduleMode === "official" ? "#ffffff" : "#475569",
+                transition: "all 0.15s",
+              }}
+              onClick={() => setDashboardScheduleMode("official")}
+            >
+              ▦ Matriks Dokumen Resmi (Sesuai Jadwal Sekolah)
+            </button>
+            <button
+              type="button"
+              style={{
+                padding: "7px 16px",
+                borderRadius: "6px",
+                border: "none",
+                fontWeight: 700,
+                fontSize: "12px",
+                cursor: "pointer",
+                background:
+                  dashboardScheduleMode === "list" ? "#059669" : "#f1f5f9",
+                color:
+                  dashboardScheduleMode === "list" ? "#ffffff" : "#475569",
+                transition: "all 0.15s",
+              }}
+              onClick={() => setDashboardScheduleMode("list")}
+            >
+              ▤ Daftar Baris Mengajar Saya
+            </button>
+          </div>
+
+          {dashboardScheduleMode === "official" ? (
+            <OfficialScheduleBoard role="teacher" userName={teacher?.name} />
+          ) : (
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Hari</th>
+                  <th>Waktu</th>
+                  <th>Kelas</th>
+                  <th>Mata Pelajaran</th>
+                  <th>Ruang</th>
+                </tr>
+              </thead>
+              <tbody>
+                {schedules.map((item) => (
+                  <tr key={item.id}>
+                    <td><b>{item.hari}</b></td>
+                    <td>{item.jam}</td>
+                    <td>{item.kelas}</td>
+                    <td>{item.mapel}</td>
+                    <td>{item.ruang}</td>
+                  </tr>
+                ))}
+                {!loading && !schedules.length ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", color: "#64748b", padding: "20px" }}>
+                      Belum ada jadwal untuk mata pelajaran Anda.
+                    </td>
+                  </tr>
+                ) : null}
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} style={{ textAlign: "center", color: "#64748b", padding: "20px" }}>
+                      Memuat jadwal mengajar...
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* KELAS YANG DITUGASKAN & PINTASAN AKSI */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: "20px",
+            marginBottom: "24px",
+          }}
+        >
+          <div className={styles.panel}>
+            <div className={styles.panelTitle}>
               <div>
-                <span aria-hidden="true">▦</span>
-                <h1>Jadwal Pelajaran &amp; Mengajar Guru</h1>
+                <h3>Kelas yang Ditugaskan</h3>
+                <p>Daftar rombongan belajar yang Anda ajar</p>
               </div>
-              <Link
-                href="/portal-guru/jadwal"
-                className={styles.studentTextLink}
-              >
-                Buka jadwal lengkap →
-              </Link>
             </div>
-            <div className={styles.studentPanelBody}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "18px" }}>
-                <button
-                  type="button"
-                  style={{
-                    padding: "7px 16px",
-                    borderRadius: "6px",
-                    border: "none",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    background: dashboardScheduleMode === "official" ? "#1e40af" : "#f1f5f9",
-                    color: dashboardScheduleMode === "official" ? "#ffffff" : "#475569",
-                    transition: "all 0.15s",
-                  }}
-                  onClick={() => setDashboardScheduleMode("official")}
-                >
-                  ▦ Matriks Dokumen Resmi (Sesuai Gambar)
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    padding: "7px 16px",
-                    borderRadius: "6px",
-                    border: "none",
-                    fontWeight: 700,
-                    fontSize: "12px",
-                    cursor: "pointer",
-                    background: dashboardScheduleMode === "list" ? "#1e40af" : "#f1f5f9",
-                    color: dashboardScheduleMode === "list" ? "#ffffff" : "#475569",
-                    transition: "all 0.15s",
-                  }}
-                  onClick={() => setDashboardScheduleMode("list")}
-                >
-                  ▤ Daftar Mengajar Saya
-                </button>
-              </div>
-
-              {dashboardScheduleMode === "official" ? (
-                <OfficialScheduleBoard role="teacher" userName={teacher?.name} />
-              ) : (
-                <div className={styles.studentTableWrap}>
-                  <table className={styles.studentScheduleTable}>
-                    <thead>
-                      <tr>
-                        <th>Hari</th>
-                        <th>Waktu</th>
-                        <th>Kelas</th>
-                        <th>Mata Pelajaran</th>
-                        <th>Ruang</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {schedules.map((item) => (
-                        <tr key={item.id}>
-                          <td>{item.hari}</td>
-                          <td>{item.jam}</td>
-                          <td>{item.kelas}</td>
-                          <td>{item.mapel}</td>
-                          <td>{item.ruang}</td>
-                        </tr>
-                      ))}
-                      {!loading && !schedules.length ? (
-                        <tr>
-                          <td colSpan={5} className={styles.studentEmptyCell}>
-                            Belum ada jadwal untuk mata pelajaran Anda.
-                          </td>
-                        </tr>
-                      ) : null}
-                      {loading ? (
-                        <tr>
-                          <td colSpan={5} className={styles.studentEmptyCell}>
-                            Memuat jadwal...
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <div className={styles.studentInfoGrid}>
-
-            <section className={styles.studentPanel}>
-              <div className={styles.studentPanelHeading}>
-                <div>
-                  <span className={styles.studentGreenIcon}>✓</span>
-                  <h2>Kelas yang Ditugaskan</h2>
-                </div>
-              </div>
-              <div className={styles.studentPanelBody}>
+            {classes.length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                 {classes.map((item) => (
-                  <div className={styles.teacherClassRow} key={item.id}>
-                    <b>{item.kelas}</b>
-                    <span>{item.jenjang}</span>
-                    <small>{item.wali}</small>
+                  <div
+                    key={item.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "10px 14px",
+                      background: "#f8fafc",
+                      borderRadius: "8px",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <div>
+                      <b style={{ color: "#1e293b", fontSize: "14px" }}>{item.kelas}</b>
+                      <span style={{ marginLeft: "8px", fontSize: "12px", color: "#64748b" }}>
+                        ({item.jenjang})
+                      </span>
+                    </div>
+                    <small style={{ color: "#475569", fontWeight: 600 }}>
+                      Wali: {item.wali || "—"}
+                    </small>
                   </div>
                 ))}
-                {!loading && !classes.length ? (
-                  <p className={styles.studentEmptyCell}>
-                    Belum ada kelas untuk mata pelajaran ini.
-                  </p>
-                ) : null}
               </div>
-            </section>
+            ) : (
+              <p style={{ color: "#64748b", fontSize: "13px", margin: "8px 0" }}>
+                {loading ? "Memuat kelas..." : "Belum ada kelas yang ditugaskan."}
+              </p>
+            )}
           </div>
 
-          <section className={styles.studentPanel}>
-            <div className={styles.studentPanelHeading}>
+          <div className={styles.panel}>
+            <div className={styles.panelTitle}>
               <div>
-                <span aria-hidden="true">＋</span>
-                <h2>Mulai Kegiatan Mengajar</h2>
+                <h3>Pintasan Aksi Guru</h3>
+                <p>Akses cepat penginputan data harian</p>
               </div>
             </div>
-            <div className={styles.teacherActions}>
-              <Link href="/portal-guru/kehadiran">
-                <span aria-hidden="true">✓</span>
-                <b>Input Kehadiran</b>
-                <small>Hadir, izin, sakit, atau alpa</small>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <Link
+                href="/portal-guru/absensi"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  background: "#ecfdf5",
+                  border: "1px solid #a7f3d0",
+                  borderRadius: "8px",
+                  color: "#065f46",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                <span>✓ Catat Kehadiran Siswa Hari Ini</span>
+                <span>→</span>
               </Link>
-              <Link href="/portal-guru/nilai">
-                <span aria-hidden="true">◷</span>
-                <b>Input Nilai</b>
-                <small>
-                  Nilai untuk {teacher?.subject || "mata pelajaran"}
-                </small>
+              <Link
+                href="/portal-guru/nilai"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  background: "#eff6ff",
+                  border: "1px solid #bfdbfe",
+                  borderRadius: "8px",
+                  color: "#1e40af",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: "14px",
+                }}
+              >
+                <span>▤ Masukkan / Perbarui Nilai Siswa</span>
+                <span>→</span>
               </Link>
-              <Link href="/portal-guru/jadwal">
-                <span aria-hidden="true">▦</span>
-                <b>Lihat Jadwal</b>
-                <small>Kelas yang Anda ajar</small>
+              <Link
+                href="/portal-guru/jadwal"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: "12px 16px",
+                  background: "#f8fafc",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "8px",
+                  color: "#334155",
+                  textDecoration: "none",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                <span>▦ Periksa Jadwal Mengajar Lengkap</span>
+                <span>→</span>
               </Link>
             </div>
-          </section>
-          <SchoolVisionMission />
           </div>
-        </main>
-      </div>
-    </div>
+        </div>
+
+        {/* VISI MISI SEKOLAH */}
+        <SchoolVisionMission />
+      </section>
+    </PortalShell>
   );
 }
