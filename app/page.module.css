@@ -2237,6 +2237,95 @@
   margin-left: auto;
   color: #8a97a8;
   font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+.studentNavArrowExpanded {
+  transform: rotate(90deg);
+}
+
+.studentSubmenuList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 6px 0;
+  margin: 0;
+  list-style: none;
+  padding-left: 10px;
+  border-left: 2px solid #bae6fd;
+  margin-left: 18px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.studentSubmenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  color: #58677d;
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.studentSubmenuItem:hover {
+  background: #eaf6fa;
+  color: var(--student-blue-dark);
+}
+
+.studentSubmenuItemActive {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+}
+
+.studentSubmenuIcon {
+  font-size: 13px;
+  width: 16px;
+  display: inline-flex;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.portalSubmenuList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 0 6px 0;
+  margin: 0;
+  list-style: none;
+  padding-left: 10px;
+  border-left: 2px solid #cbd5e1;
+  margin-left: 18px;
+  margin-top: 2px;
+  margin-bottom: 4px;
+}
+
+.portalSubmenuItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  color: #64728a;
+  font-size: 12px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.portalSubmenuItem:hover {
+  background: #edf3ff;
+  color: #2e66db;
+}
+
+.portalSubmenuItemActive {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
 }
 
 .studentSidebarBottom {

@@ -201,6 +201,22 @@ export default function TeacherPortalPage() {
               <span>Tugas, UTS & UAS</span>
             </div>
           </article>
+
+          <article className={`${styles.statCard} ${styles.purple || styles.blue}`}>
+            <div className={styles.statIcon}>▧</div>
+            <div>
+              <p>Rapor Siswa</p>
+              <h2 style={{ fontSize: "18px", marginTop: "4px" }}>
+                <Link
+                  href="/portal-guru/rapor"
+                  style={{ color: "inherit", textDecoration: "underline" }}
+                >
+                  Kelola Rapor →
+                </Link>
+              </h2>
+              <span>Validasi rapor digital</span>
+            </div>
+          </article>
         </div>
 
         {/* JADWAL PELAJARAN / MENGAJAR */}

@@ -7,6 +7,7 @@ import { sessionMarkerKey } from "../lib/browser-session";
 import styles from "../app/page.module.css";
 import { OfficialScheduleBoard } from "./official-schedule-board";
 import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
+import { StudentNilaiView, SUBJECTS_CURRICULUM } from "./student-nilai-view";
 
 type PortalRole = "Siswa" | "Guru";
 type PortalRecord = { id: string; [key: string]: string | number };
@@ -20,28 +21,31 @@ type PortalSession = {
 const studentFeatures = [
   ["Dashboard", "/portal-siswa", "⌂"],
   ["Jadwal Pelajaran", "/portal-siswa/jadwal", "▦"],
-  ["Kelas", "/portal-siswa/kelas", "▤"],
-  ["Kehadiran", "/portal-siswa/kehadiran", "✓"],
-  ["Nilai Akademik", "/portal-siswa/nilai", "◷"],
-  ["Rapor", "/portal-siswa/rapor", "▧"],
-  ["Mata Pelajaran", "/portal-siswa/mata-pelajaran", "◈"],
+  ["Absensi Siswa", "/portal-siswa/absensi", "✓"],
+  ["Nilai Siswa", "/portal-siswa/nilai", "▤"],
+  ["Rapor Digital", "/portal-siswa/rapor", "▧"],
+  ["Informasi Sekolah", "/portal-siswa/informasi-sekolah", "ℹ"],
 ];
 
 const teacherFeatures = [
   ["Dashboard", "/portal-guru", "⌂"],
   ["Jadwal Mengajar", "/portal-guru/jadwal", "▦"],
   ["Kelas Mapel", "/portal-guru/kelas", "▤"],
-  ["Absensi Siswa", "/portal-guru/kehadiran", "✓"],
+  ["Absensi Siswa", "/portal-guru/absensi", "✓"],
   ["Input Nilai", "/portal-guru/nilai", "◷"],
+  ["Rapor Siswa", "/portal-guru/rapor", "▧"],
   ["Mata Pelajaran", "/portal-guru/mata-pelajaran", "◈"],
 ];
 
 const featureInfo: Record<string, { title: string; resource: string }> = {
   jadwal: { title: "Jadwal Pelajaran", resource: "schedules" },
+  absensi: { title: "Absensi Siswa", resource: "attendance" },
+  nilai: { title: "Nilai Siswa", resource: "grades" },
+  rapor: { title: "Rapor Digital", resource: "grades" },
+  "informasi-sekolah": { title: "Informasi Sekolah", resource: "school-info" },
+  // Portal Guru only
   kelas: { title: "Kelas", resource: "classes" },
   kehadiran: { title: "Kehadiran", resource: "attendance" },
-  nilai: { title: "Nilai Akademik", resource: "grades" },
-  rapor: { title: "Rapor", resource: "grades" },
   "mata-pelajaran": { title: "Mata Pelajaran", resource: "subjects" },
 };
 
@@ -90,9 +94,6 @@ const columns: Record<string, Array<[string, string]>> = {
 function resolveResource(role: PortalRole, feature: string) {
   const configured = featureInfo[feature];
   if (!configured) return null;
-  if (feature === "rapor" && role === "Siswa") {
-    return { title: configured.title, resource: "grades" };
-  }
   return configured;
 }
 
@@ -139,9 +140,32 @@ export function PortalWorkspace({
     (student) => String(student.kelas) === selectedClass,
   );
 
+  const isSchoolInfo = feature === "informasi-sekolah";
+  const [isNilaiExpanded, setIsNilaiExpanded] = useState(feature === "nilai");
+  const [selectedSubjectName, setSelectedSubjectName] = useState("Bahasa Inggris");
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const m = params.get("mapel");
+      if (m) {
+        setSelectedSubjectName(m);
+        setIsNilaiExpanded(true);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     async function loadData() {
       try {
+        // School info page does not need data fetching
+        if (isSchoolInfo) {
+          const sessionResponse = await fetch("/api/session");
+          if (sessionResponse.ok) {
+            setSession((await sessionResponse.json()) as PortalSession);
+          }
+          return;
+        }
         const [sessionResponse, dataResponse, classResponse, studentResponse] =
           await Promise.all([
             fetch("/api/session"),
@@ -170,7 +194,7 @@ export function PortalWorkspace({
       }
     }
     void loadData();
-  }, [resource]);
+  }, [resource, isSchoolInfo]);
 
   async function logout() {
     window.sessionStorage.removeItem(sessionMarkerKey);
@@ -342,28 +366,70 @@ export function PortalWorkspace({
             className={styles.studentNav}
             aria-label={`Navigasi portal ${isTeacher ? "guru" : "siswa"}`}
           >
-            {filteredMenu.map(([label, href, icon]) => (
-              <Link
-                key={href}
-                href={href}
-                className={`${styles.studentNavItem} ${href === `${base}/${feature}` ? styles.studentNavActive : ""}`}
-                data-tooltip={label}
-                title={isCollapsed && !isMobileOpen ? label : undefined}
-                onClick={() => {
-                  if (isMobileOpen) closeMobile();
-                }}
-              >
-                <span aria-hidden="true">{icon}</span>
-                {(!isCollapsed || isMobileOpen) && (
-                  <>
-                    <span className={styles.studentNavLabel}>{label}</span>
-                    <span className={styles.studentNavArrow} aria-hidden="true">
-                      ›
-                    </span>
-                  </>
-                )}
-              </Link>
-            ))}
+            {filteredMenu.map(([label, href, icon]) => {
+              const isNilaiItem = !isTeacher && label === "Nilai Siswa";
+              const isMainActive = href === `${base}/${feature}`;
+
+              return (
+                <div key={href} style={{ display: "flex", flexDirection: "column" }}>
+                  <Link
+                    href={href}
+                    className={`${styles.studentNavItem} ${isMainActive ? styles.studentNavActive : ""}`}
+                    data-tooltip={label}
+                    title={isCollapsed && !isMobileOpen ? label : undefined}
+                    onClick={(e) => {
+                      if (isNilaiItem) {
+                        setIsNilaiExpanded((prev) => !prev);
+                      }
+                      if (isMobileOpen && !isNilaiItem) closeMobile();
+                    }}
+                  >
+                    <span aria-hidden="true">{icon}</span>
+                    {(!isCollapsed || isMobileOpen) && (
+                      <>
+                        <span className={styles.studentNavLabel}>{label}</span>
+                        <span
+                          className={`${styles.studentNavArrow} ${isNilaiItem && isNilaiExpanded ? styles.studentNavArrowExpanded : ""}`}
+                          aria-hidden="true"
+                        >
+                          {isNilaiItem && isNilaiExpanded ? "⌄" : "›"}
+                        </span>
+                      </>
+                    )}
+                  </Link>
+
+                  {/* Submenu Mata Pelajaran sesuai Gambar 2 */}
+                  {isNilaiItem && isNilaiExpanded && (!isCollapsed || isMobileOpen) && (
+                    <div className={styles.studentSubmenuList}>
+                      {SUBJECTS_CURRICULUM.map((subj) => {
+                        const isSubActive =
+                          feature === "nilai" &&
+                          selectedSubjectName.toLowerCase() ===
+                            subj.name.toLowerCase();
+
+                        return (
+                          <Link
+                            key={subj.id}
+                            href={`/portal-siswa/nilai?mapel=${encodeURIComponent(subj.name)}`}
+                            className={`${styles.studentSubmenuItem} ${isSubActive ? styles.studentSubmenuItemActive : ""}`}
+                            onClick={(e) => {
+                              if (feature === "nilai") {
+                                e.preventDefault();
+                                setSelectedSubjectName(subj.name);
+                                if (isMobileOpen) closeMobile();
+                              }
+                            }}
+                          >
+                            <span className={styles.studentSubmenuIcon}>{subj.icon}</span>
+                            <span>{subj.name}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
             {filteredMenu.length === 0 && (!isCollapsed || isMobileOpen) && (
               <p className={styles.menuEmptyNotice}>Menu tidak ditemukan</p>
             )}
@@ -520,94 +586,164 @@ export function PortalWorkspace({
                 <p className={styles.portalFormError}>{error}</p>
               ) : null}
 
-              {feature === "jadwal" ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
-                  <button
-                    type="button"
-                    style={{
-                      padding: "7px 16px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontWeight: 700,
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      background: scheduleViewMode === "official" ? "#1e40af" : "#f1f5f9",
-                      color: scheduleViewMode === "official" ? "#ffffff" : "#475569",
-                      transition: "all 0.15s",
-                    }}
-                    onClick={() => setScheduleViewMode("official")}
-                  >
-                    ▦ Matriks Dokumen Resmi (Sesuai Gambar)
-                  </button>
-                  <button
-                    type="button"
-                    style={{
-                      padding: "7px 16px",
-                      borderRadius: "6px",
-                      border: "none",
-                      fontWeight: 700,
-                      fontSize: "12px",
-                      cursor: "pointer",
-                      background: scheduleViewMode === "list" ? "#1e40af" : "#f1f5f9",
-                      color: scheduleViewMode === "list" ? "#ffffff" : "#475569",
-                      transition: "all 0.15s",
-                    }}
-                    onClick={() => setScheduleViewMode("list")}
-                  >
-                    ▤ Daftar Baris Sederhana
-                  </button>
-                </div>
-              ) : null}
+              {isSchoolInfo ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {/* Profil Sekolah */}
+                  <div style={{ background: "#f8fafc", borderRadius: "10px", padding: "20px", border: "1px solid #e2e8f0" }}>
+                    <h2 style={{ margin: "0 0 4px", fontSize: "16px", fontWeight: 700, color: "#0f172a" }}>🏫 Profil Sekolah</h2>
+                    <p style={{ margin: "0 0 12px", fontSize: "13px", color: "#64748b" }}>Informasi resmi SD – SMP Maranatha</p>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                      <tbody>
+                        {[
+                          ["Nama Sekolah", "SD – SMP Maranatha"],
+                          ["Jenjang", "SD & SMP"],
+                          ["Status", "Swasta"],
+                          ["Akreditasi", "A"],
+                        ].map(([label, val]) => (
+                          <tr key={label}>
+                            <td style={{ padding: "8px 12px 8px 0", color: "#64748b", width: "40%", fontWeight: 600 }}>{label}</td>
+                            <td style={{ padding: "8px 0", color: "#0f172a" }}>: {val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
 
-              {feature === "jadwal" && scheduleViewMode === "official" ? (
-                <OfficialScheduleBoard
-                  role={isTeacher ? "teacher" : "student"}
-                  userGrade={session?.grade}
-                  userName={session?.name}
+                  {/* Visi & Misi (Disamakan dengan Dashboard Utama) */}
+                  <div style={{ background: "#eff6ff", borderRadius: "10px", padding: "20px", border: "1px solid #bfdbfe" }}>
+                    <h2 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 700, color: "#1e40af" }}>🎯 Visi & Misi Sekolah</h2>
+                    <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#1e3a8a", fontSize: "14px" }}>Visi</p>
+                    <p style={{ margin: "0 0 14px", color: "#1e40af", fontSize: "14px", lineHeight: 1.6 }}>
+                      Berkarakter Seperti Yesus Kristus, Berprestasi dalam Ilmu Pengetahuan dan Teknologi Serta Mandiri
+                    </p>
+                    <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#1e3a8a", fontSize: "14px" }}>Misi</p>
+                    <ol style={{ margin: 0, paddingLeft: "20px", color: "#1e40af", fontSize: "14px", lineHeight: 1.8 }}>
+                      <li>Mewujudkan Pendidikan Advent, yang Beriman dan suka Melayani.</li>
+                      <li>Mengembangkan Kemampuan Peserta Didik Agar Terampil dalam Ilmu Pengetahuan dan Teknologi.</li>
+                      <li>Memotivasi Peserta Didik Agar Kreatif, Berprestasi dan Mandiri.</li>
+                    </ol>
+                  </div>
+
+                  {/* Kontak */}
+                  <div style={{ background: "#f0fdf4", borderRadius: "10px", padding: "20px", border: "1px solid #bbf7d0" }}>
+                    <h2 style={{ margin: "0 0 10px", fontSize: "16px", fontWeight: 700, color: "#15803d" }}>📞 Kontak & Layanan</h2>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+                      <tbody>
+                        {[
+                          ["Telepon", "+62 813-2503-1459 - Tugiya"],
+                          ["Email", "sdmaranatha@gmail.com"],
+                          ["Jam Operasional", "Senin – Jumat, 07.00 – 13.00"],
+                          ["Layanan Administrasi", "Senin – Jumat, 08.00 – 13.00"],
+                        ].map(([label, val]) => (
+                          <tr key={label}>
+                            <td style={{ padding: "8px 12px 8px 0", color: "#166534", width: "45%", fontWeight: 600 }}>{label}</td>
+                            <td style={{ padding: "8px 0", color: "#15803d" }}>: {val}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ) : feature === "nilai" && !isTeacher ? (
+                <StudentNilaiView
+                  selectedSubjectName={selectedSubjectName}
+                  onSelectSubject={(name) => setSelectedSubjectName(name)}
+                  studentName={session?.name}
+                  studentGrade={session?.grade}
+                  dbRecords={records}
                 />
               ) : (
-                <div className={styles.studentTableWrap}>
-                  <table className={styles.studentScheduleTable}>
-                    <thead>
-                      <tr>
-                        {headers.map(([key, label]) => (
-                          <th key={key}>{label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {records.map((record) => (
-                        <tr key={record.id}>
-                          {headers.map(([key]) => (
-                            <td key={key}>{record[key] ?? "-"}</td>
+                <>
+                  {feature === "jadwal" ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginBottom: "16px" }}>
+                      <button
+                        type="button"
+                        style={{
+                          padding: "7px 16px",
+                          borderRadius: "6px",
+                          border: "none",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          background: scheduleViewMode === "official" ? "#1e40af" : "#f1f5f9",
+                          color: scheduleViewMode === "official" ? "#ffffff" : "#475569",
+                          transition: "all 0.15s",
+                        }}
+                        onClick={() => setScheduleViewMode("official")}
+                      >
+                        ▦ Matriks Dokumen Resmi (Sesuai Gambar)
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          padding: "7px 16px",
+                          borderRadius: "6px",
+                          border: "none",
+                          fontWeight: 700,
+                          fontSize: "12px",
+                          cursor: "pointer",
+                          background: scheduleViewMode === "list" ? "#1e40af" : "#f1f5f9",
+                          color: scheduleViewMode === "list" ? "#ffffff" : "#475569",
+                          transition: "all 0.15s",
+                        }}
+                        onClick={() => setScheduleViewMode("list")}
+                      >
+                        ▤ Daftar Baris Sederhana
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {feature === "jadwal" && scheduleViewMode === "official" ? (
+                    <OfficialScheduleBoard
+                      role={isTeacher ? "teacher" : "student"}
+                      userGrade={session?.grade}
+                      userName={session?.name}
+                    />
+                  ) : (
+                    <div className={styles.studentTableWrap}>
+                      <table className={styles.studentScheduleTable}>
+                        <thead>
+                          <tr>
+                            {headers.map(([key, label]) => (
+                              <th key={key}>{label}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {records.map((record) => (
+                            <tr key={record.id}>
+                              {headers.map(([key]) => (
+                                <td key={key}>{record[key] ?? "-"}</td>
+                              ))}
+                            </tr>
                           ))}
-                        </tr>
-                      ))}
-                      {!loading && records.length === 0 ? (
-                        <tr>
-                          <td
-                            colSpan={headers.length}
-                            className={styles.studentEmptyCell}
-                          >
-                            {canEdit
-                              ? "Belum ada data. Gunakan formulir di atas untuk memasukkan data."
-                              : "Belum ada data untuk akun atau mata pelajaran ini."}
-                          </td>
-                        </tr>
-                      ) : null}
-                      {loading ? (
-                        <tr>
-                          <td
-                            colSpan={headers.length}
-                            className={styles.studentEmptyCell}
-                          >
-                            Memuat data...
-                          </td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
-                </div>
+                          {!loading && records.length === 0 ? (
+                            <tr>
+                              <td
+                                colSpan={headers.length}
+                                className={styles.studentEmptyCell}
+                              >
+                                {canEdit
+                                  ? "Belum ada data. Gunakan formulir di atas untuk memasukkan data."
+                                  : "Belum ada data untuk akun atau mata pelajaran ini."}
+                              </td>
+                            </tr>
+                          ) : null}
+                          {loading ? (
+                            <tr>
+                              <td
+                                colSpan={headers.length}
+                                className={styles.studentEmptyCell}
+                              >
+                                Memuat data...
+                              </td>
+                            </tr>
+                          ) : null}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </section>

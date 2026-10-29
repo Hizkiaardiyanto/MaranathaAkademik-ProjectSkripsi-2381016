@@ -20,6 +20,7 @@ const navItems = [
   { label: "Pengelolaan Nilai", href: "/nilai", icon: "▤" },
   { label: "Rapor", href: "/rapor", icon: "▧" },
   { label: "Laporan Akademik", href: "/laporan", icon: "◫" },
+  { label: "Informasi Sekolah", href: "/informasi-sekolah", icon: "ⓘ" },
 ];
 
 export function SchoolShell({

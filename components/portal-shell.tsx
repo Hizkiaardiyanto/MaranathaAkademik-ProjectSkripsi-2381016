@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { sessionMarkerKey } from "../lib/browser-session";
 import styles from "../app/page.module.css";
 import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
+import { SUBJECTS_CURRICULUM } from "./student-nilai-view";
 
 export type PortalNavItem = {
   label: string;
@@ -51,6 +52,9 @@ export function PortalShell({
   const [menuSearch, setMenuSearch] = useState("");
   const [session, setSession] = useState<PortalSessionData | null>(
     propSession ?? null,
+  );
+  const [isNilaiExpanded, setIsNilaiExpanded] = useState(
+    Boolean(activeHref?.includes("nilai") || activeItem === "Nilai Siswa")
   );
 
   useEffect(() => {
@@ -235,29 +239,58 @@ export function PortalShell({
 
           <nav className={styles.navMenu}>
             {filteredNavItems.map(({ label, href, icon }) => {
+              const isNilaiItem = !isTeacher && label === "Nilai Siswa";
               const isActive =
                 activeHref === href ||
                 activeItem === label ||
                 (activeHref && href !== "/portal-siswa" && href !== "/portal-guru" && activeHref.startsWith(href));
 
               return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`${styles.navItem} ${isActive ? styles.active : ""}`}
-                  aria-current={isActive ? "page" : undefined}
-                  data-tooltip={label}
-                  title={label}
-                  onClick={() => {
-                    if (isMobileOpen) closeMobile();
-                  }}
-                >
-                  <i>{icon}</i>
-                  <span className={styles.navLabel}>{label}</span>
-                  <span className={styles.navArrow} aria-hidden="true">
-                    ›
-                  </span>
-                </Link>
+                <div key={href} style={{ display: "flex", flexDirection: "column" }}>
+                  <Link
+                    href={href}
+                    className={`${styles.navItem} ${isActive ? styles.active : ""}`}
+                    aria-current={isActive ? "page" : undefined}
+                    data-tooltip={label}
+                    title={label}
+                    onClick={(e) => {
+                      if (isNilaiItem) {
+                        setIsNilaiExpanded((prev) => !prev);
+                      }
+                      if (isMobileOpen && !isNilaiItem) closeMobile();
+                    }}
+                  >
+                    <i>{icon}</i>
+                    <span className={styles.navLabel}>{label}</span>
+                    <span
+                      className={`${styles.navArrow} ${isNilaiItem && isNilaiExpanded ? styles.studentNavArrowExpanded : ""}`}
+                      aria-hidden="true"
+                    >
+                      {isNilaiItem && isNilaiExpanded ? "⌄" : "›"}
+                    </span>
+                  </Link>
+
+                  {/* Submenu Mata Pelajaran (Gambar 2) */}
+                  {isNilaiItem && isNilaiExpanded && (!isCollapsed || isMobileOpen) && (
+                    <div className={styles.portalSubmenuList}>
+                      {SUBJECTS_CURRICULUM.map((s) => (
+                        <Link
+                          key={s.id}
+                          href={`/portal-siswa/nilai?mapel=${encodeURIComponent(s.name)}`}
+                          className={styles.portalSubmenuItem}
+                          onClick={() => {
+                            if (isMobileOpen) closeMobile();
+                          }}
+                        >
+                          <span style={{ fontSize: "14px", width: "18px", display: "inline-flex", justifyContent: "center" }}>
+                            {s.icon}
+                          </span>
+                          <span>{s.name}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
               );
             })}
             {filteredNavItems.length === 0 && (

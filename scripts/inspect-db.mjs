@@ -50,10 +50,10 @@ try {
   );
   console.log("Classes in db:", classes.map(c => parse(c.payload)));
 
-  const [subjects] = await connection.query(
-    "SELECT id, payload FROM app_records WHERE resource = 'subjects'"
+  const [grades] = await connection.query(
+    "SELECT id, payload FROM app_records WHERE resource = 'grades'"
   );
-  console.log("Subjects in db:", subjects.map(s => parse(s.payload)));
+  console.log("Grades in db:", grades.map(g => parse(g.payload)));
 } finally {
   await connection.end();
 }

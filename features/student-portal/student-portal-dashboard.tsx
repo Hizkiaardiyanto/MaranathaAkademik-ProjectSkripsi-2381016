@@ -310,7 +310,7 @@ export function StudentPortalDashboard() {
                   Melihat Nilai Akademik
                 </h3>
                 <p style={{ margin: 0, fontSize: "13px", color: "#64748b", lineHeight: 1.4 }}>
-                  Lihat rincian nilai tugas harian, Penilaian Tengah Semester (PTS), dan Penilaian Akhir Semester (PAS).
+                  Lihat rincian nilai tugas, ujian harian, dan latihan soal harian terkelompok per mata pelajaran.
                 </p>
               </div>
               <div

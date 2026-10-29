@@ -50,5 +50,6 @@ export const teacherPortalMenu = [
   { label: "Absensi Siswa", href: "/portal-guru/absensi", icon: "✓" },
   { label: "Input Nilai", href: "/portal-guru/nilai", icon: "▤" },
   { label: "Kelas", href: "/portal-guru/kelas", icon: "▦" },
+  { label: "Rapor Siswa", href: "/portal-guru/rapor", icon: "▧" },
   { label: "Mata Pelajaran", href: "/portal-guru/mata-pelajaran", icon: "◈" },
 ] as const;
