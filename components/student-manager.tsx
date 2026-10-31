@@ -17,7 +17,18 @@ type Student = {
   className: string;
   gender: "L" | "P";
   status: string;
+  // Data tambahan
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  alamat?: string;
+  agama?: string;
+  waliMurid?: string;
+  teleponWali?: string;
+  hubunganWali?: string;
+  pekerjaanWali?: string;
+  fotoUrl?: string;
 };
+
 type PendingRegistration = {
   email: string;
   name: string;
@@ -38,21 +49,32 @@ const emptyStudent: Student = {
   className: "",
   gender: "L",
   status: "Aktif",
+  tempatLahir: "",
+  tanggalLahir: "",
+  alamat: "",
+  agama: "",
+  waliMurid: "",
+  teleponWali: "",
+  hubunganWali: "",
+  pekerjaanWali: "",
+  fotoUrl: "",
 };
+
+const AGAMA_OPTIONS = ["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu"];
+const HUBUNGAN_OPTIONS = ["Ayah", "Ibu", "Kakek", "Nenek", "Paman", "Bibi", "Wali"];
 
 export function StudentManager() {
   const [students, setStudents] = useState<Student[]>([]);
   const [registrations, setRegistrations] = useState<PendingRegistration[]>([]);
   const [linkedStudentIds, setLinkedStudentIds] = useState<string[]>([]);
-  const [selectedStudents, setSelectedStudents] = useState<
-    Record<string, string>
-  >({});
+  const [selectedStudents, setSelectedStudents] = useState<Record<string, string>>({});
   const [approvingEmail, setApprovingEmail] = useState("");
   const [form, setForm] = useState<Student>(emptyStudent);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
 
   // State untuk Impor Excel Siswa
   const [showImportModal, setShowImportModal] = useState(false);
@@ -62,6 +84,9 @@ export function StudentManager() {
   const [importSaving, setImportSaving] = useState(false);
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
+
+  // Tab for form
+  const [formTab, setFormTab] = useState<"dasar" | "wali" | "tambahan">("dasar");
 
   async function loadStudents() {
     const response = await fetch("/api/students");
@@ -119,20 +144,14 @@ export function StudentManager() {
       }
     }
     void load();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError("");
     setSaving(true);
-    const payload = {
-      ...form,
-      className: form.className,
-    };
+    const payload = { ...form };
     const url = editingId ? `/api/students/${editingId}` : "/api/students";
     const method = editingId ? "PUT" : "POST";
     try {
@@ -148,6 +167,7 @@ export function StudentManager() {
       }
       setForm(emptyStudent);
       setEditingId(null);
+      setFormTab("dasar");
       await loadStudents();
     } catch (saveError) {
       console.error("Failed to save student:", saveError);
@@ -161,91 +181,58 @@ export function StudentManager() {
     }
   }
 
-  function handleEdit(student: Student) {
-    setForm(student);
-    setEditingId(student.id);
-  }
-
   async function handleDelete(id: string) {
-    setError("");
+    if (!confirm("Hapus data siswa ini? Aksi ini tidak bisa dibatalkan.")) return;
     try {
       const response = await fetch(`/api/students/${id}`, { method: "DELETE" });
       if (!response.ok) {
-        throw new Error(
-          await getApiErrorMessage(response, "Data siswa gagal dihapus."),
-        );
+        throw new Error(await getApiErrorMessage(response, "Gagal menghapus data siswa."));
       }
       await loadStudents();
     } catch (deleteError) {
-      console.error(`Failed to delete student ${id}:`, deleteError);
-      setError(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Koneksi gagal. Data siswa tidak dapat dihapus.",
-      );
+      setError(deleteError instanceof Error ? deleteError.message : "Gagal menghapus data siswa.");
     }
   }
 
-  async function approveRegistration(registration: PendingRegistration) {
-    const selection = selectedStudents[registration.email] ?? "__create__";
-    const createStudent = selection === "__create__";
+  function handleEdit(student: Student) {
+    setForm({ ...emptyStudent, ...student });
+    setEditingId(student.id);
+    setFormTab("dasar");
     setError("");
-    setApprovingEmail(registration.email);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  async function handleApproveRegistration(email: string, studentId: string) {
+    setApprovingEmail(email);
     try {
-      const response = await fetch("/api/student-registrations", {
-        method: "PATCH",
+      const response = await fetch("/api/accounts", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: registration.email,
-          ...(createStudent ? { createStudent: true } : { studentId: selection }),
-        }),
+        body: JSON.stringify({ action: "approve", email, studentId }),
       });
       if (!response.ok) {
-        throw new Error(
-          await getApiErrorMessage(
-            response,
-            "Pendaftaran siswa gagal diverifikasi.",
-          ),
-        );
+        throw new Error(await getApiErrorMessage(response, "Gagal menyetujui pendaftaran."));
       }
       await loadStudents();
-      setSelectedStudents((current) => {
-        const next = { ...current };
-        delete next[registration.email];
-        return next;
-      });
-    } catch (approvalError) {
-      console.error(
-        `Failed to approve student registration ${registration.email}:`,
-        approvalError,
-      );
-      setError(
-        approvalError instanceof Error
-          ? approvalError.message
-          : "Koneksi gagal. Pendaftaran tidak dapat diverifikasi.",
-      );
+    } catch (approveError) {
+      setError(approveError instanceof Error ? approveError.message : "Gagal menyetujui pendaftaran.");
     } finally {
       setApprovingEmail("");
     }
   }
 
-  async function handleExcelFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
+  async function handleFileImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
     if (!file) return;
-    setImportError("");
     setImportLoading(true);
-    setImportFileName(file.name);
+    setImportError("");
+    setImportSuccess("");
     try {
       const rows = await parseStudentExcel(file);
-      if (rows.length === 0) {
-        throw new Error("Tidak ada data siswa yang valid dalam file Excel.");
-      }
       setImportRows(rows);
-    } catch (err) {
-      setImportError(
-        err instanceof Error ? err.message : "Gagal membaca file Excel.",
-      );
-      setImportRows([]);
+      setImportFileName(file.name);
+    } catch (parseError) {
+      setImportError(parseError instanceof Error ? parseError.message : "Gagal membaca file Excel.");
     } finally {
       setImportLoading(false);
     }
@@ -255,6 +242,7 @@ export function StudentManager() {
     if (importRows.length === 0) return;
     setImportSaving(true);
     setImportError("");
+    setImportSuccess("");
     try {
       const response = await fetch("/api/students/batch", {
         method: "POST",
@@ -262,631 +250,484 @@ export function StudentManager() {
         body: JSON.stringify({ students: importRows }),
       });
       if (!response.ok) {
-        throw new Error(
-          await getApiErrorMessage(response, "Gagal mengimpor batch data siswa."),
-        );
+        throw new Error(await getApiErrorMessage(response, "Gagal mengimpor data siswa."));
       }
-      const data = await response.json();
-      let msg = `Berhasil mengimpor ${data.importedCount ?? importRows.length} data siswa.`;
-      if (data.skippedCount > 0) {
-        msg += ` (${data.skippedCount} data dilewati karena NIS/NISN sudah ada atau data tidak lengkap)`;
-      }
-      setImportSuccess(msg);
-      setShowImportModal(false);
+      const result = await response.json() as { imported?: number };
+      setImportSuccess(`Berhasil mengimpor ${result.imported ?? importRows.length} data siswa.`);
       setImportRows([]);
       setImportFileName("");
       await loadStudents();
-    } catch (err) {
-      setImportError(
-        err instanceof Error ? err.message : "Gagal menyimpan data siswa.",
-      );
+    } catch (importErr) {
+      setImportError(importErr instanceof Error ? importErr.message : "Gagal mengimpor data siswa.");
     } finally {
       setImportSaving(false);
     }
   }
 
+  const f = (field: keyof Student) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(prev => ({ ...prev, [field]: e.target.value }));
+  };
+
+  // ─── DETAIL VIEW MODAL ───────────────────────────────────────────────────────
+  if (viewingStudent) {
+    const s = viewingStudent;
+    return (
+      <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <button
+            type="button"
+            onClick={() => setViewingStudent(null)}
+            style={{ padding: "6px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontWeight: 600 }}
+          >
+            ← Kembali
+          </button>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Detail Siswa</h2>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+          {/* Kolom Kiri: Data Pribadi */}
+          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #f1f5f9" }}>
+              <div style={{ width: 60, height: 60, borderRadius: "50%", background: s.gender === "L" ? "#dbeafe" : "#fce7f3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                {s.gender === "L" ? "👦" : "👧"}
+              </div>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 18 }}>{s.name}</div>
+                <div style={{ color: "#64748b", fontSize: 13 }}>NIS: {s.nis} · NISN: {s.nisn}</div>
+                <span style={{ display: "inline-block", marginTop: 4, padding: "2px 10px", borderRadius: 20, background: s.status === "Aktif" ? "#dcfce7" : "#fef3c7", color: s.status === "Aktif" ? "#16a34a" : "#92400e", fontSize: 12, fontWeight: 600 }}>
+                  {s.status}
+                </span>
+              </div>
+            </div>
+
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#64748b", marginBottom: 12, textTransform: "uppercase", letterSpacing: 1 }}>Data Pribadi</h3>
+            {[
+              ["Kelas", s.className],
+              ["Jenis Kelamin", s.gender === "L" ? "Laki-laki" : "Perempuan"],
+              ["Agama", s.agama],
+              ["Tempat Lahir", s.tempatLahir],
+              ["Tanggal Lahir", s.tanggalLahir],
+              ["Alamat", s.alamat],
+            ].map(([label, value]) => value ? (
+              <div key={label} style={{ display: "flex", gap: 8, marginBottom: 8, fontSize: 14 }}>
+                <span style={{ color: "#94a3b8", minWidth: 120 }}>{label}</span>
+                <span style={{ fontWeight: 500 }}>{value}</span>
+              </div>
+            ) : null)}
+          </div>
+
+          {/* Kolom Kanan: Data Wali */}
+          <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 10, padding: 24 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: "#64748b", marginBottom: 16, textTransform: "uppercase", letterSpacing: 1 }}>Data Wali Murid</h3>
+            {[
+              ["Nama Wali", s.waliMurid],
+              ["Hubungan", s.hubunganWali],
+              ["Telepon Wali", s.teleponWali],
+              ["Pekerjaan", s.pekerjaanWali],
+            ].map(([label, value]) => (
+              <div key={label} style={{ display: "flex", gap: 8, marginBottom: 12, fontSize: 14 }}>
+                <span style={{ color: "#94a3b8", minWidth: 120 }}>{label}</span>
+                <span style={{ fontWeight: 500 }}>{value || <span style={{ color: "#cbd5e1", fontStyle: "italic" }}>Belum diisi</span>}</span>
+              </div>
+            ))}
+
+            <div style={{ marginTop: 24, display: "flex", gap: 10 }}>
+              <button
+                type="button"
+                onClick={() => { setViewingStudent(null); handleEdit(s); }}
+                style={{ padding: "8px 18px", borderRadius: 6, background: "#198caf", color: "#fff", border: "none", cursor: "pointer", fontWeight: 600, fontSize: 14 }}
+              >
+                ✏️ Edit Data
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewingStudent(null)}
+                style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── MAIN VIEW ───────────────────────────────────────────────────────────────
   return (
     <>
-      {importSuccess && (
-        <div
-          style={{
-            padding: "12px 18px",
-            marginBottom: "18px",
-            borderRadius: "8px",
-            background: "#ecfdf5",
-            border: "1px solid #a7f3d0",
-            color: "#065f46",
-            fontSize: "14px",
-            fontWeight: 600,
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span>✓ {importSuccess}</span>
-          <button
-            onClick={() => setImportSuccess("")}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "#065f46",
-              fontWeight: "bold",
-              fontSize: "16px",
-            }}
-          >
-            ×
-          </button>
+      {error && (
+        <div className={styles.errorBanner} style={{ marginBottom: 16 }}>
+          ⚠ {error}
         </div>
       )}
 
-      <div className={styles.panel}>
-        <div className={styles.panelTitle} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-          <div>
-            <h3>{editingId ? "Edit Siswa" : "Tambah Siswa"}</h3>
-            <p>Form data siswa baru atau update data exist</p>
-          </div>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      {/* ── FORM TAMBAH / EDIT ─────────────────────────────────── */}
+      <section className={styles.formCard} style={{ marginBottom: 32 }}>
+        <div className={styles.formCardHeader}>
+          <b>{editingId ? "Edit Data Siswa" : "Tambah Siswa Baru"}</b>
+          {editingId && (
             <button
               type="button"
-              onClick={downloadStudentTemplate}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 14px",
-                borderRadius: "6px",
-                border: "1px solid #cbd5e1",
-                background: "#f8fafc",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-              title="Unduh format file Excel untuk data siswa"
+              onClick={() => { setForm(emptyStudent); setEditingId(null); setFormTab("dasar"); setError(""); }}
+              style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer", fontSize: 13 }}
             >
-              📥 Unduh Template (.xlsx)
+              Batal Edit
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowImportModal(true);
-                setImportError("");
-                setImportRows([]);
-                setImportFileName("");
-              }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                border: "none",
-                background: "#16a34a",
-                color: "#ffffff",
-                fontSize: "13px",
-                fontWeight: 700,
-                cursor: "pointer",
-                boxShadow: "0 1px 3px rgba(22, 163, 74, 0.3)",
-              }}
-            >
-              📂 Impor Data Siswa (Excel)
-            </button>
-          </div>
+          )}
         </div>
 
-        <form onSubmit={handleSubmit} className={styles.formGrid}>
-          <label>
-            Nama
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </label>
-          <label>
-            NIS
-            <input
-              required
-              value={form.nis}
-              onChange={(e) => setForm({ ...form, nis: e.target.value })}
-            />
-          </label>
-          <label>
-            NISN
-            <input
-              required
-              value={form.nisn}
-              onChange={(e) => setForm({ ...form, nisn: e.target.value })}
-            />
-          </label>
-          <label>
-            Kelas
-            <input
-              required
-              value={form.className}
-              onChange={(e) => setForm({ ...form, className: e.target.value })}
-            />
-          </label>
-          <label>
-            Jenis Kelamin
-            <select
-              value={form.gender}
-              onChange={(e) =>
-                setForm({ ...form, gender: e.target.value as "L" | "P" })
-              }
+        {/* Tab navigasi form */}
+        <div className={styles.formTabNav}>
+          {(["dasar", "wali", "tambahan"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setFormTab(tab)}
+              className={`${styles.formTabBtn} ${formTab === tab ? styles.formTabBtnActive : ""}`}
             >
-              <option value="L">Laki-laki</option>
-              <option value="P">Perempuan</option>
-            </select>
-          </label>
-          <label>
-            Status
-            <select
-              value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value })}
-            >
-              <option value="Aktif">Aktif</option>
-              <option value="Lulus">Lulus</option>
-              <option value="Pindah">Pindah</option>
-            </select>
-          </label>
+              {tab === "dasar" ? "📋 Data Dasar" : tab === "wali" ? "👨‍👩‍👧 Wali Murid" : "📌 Data Tambahan"}
+            </button>
+          ))}
+        </div>
+
+        <form onSubmit={(e) => void handleSubmit(e)}>
+          {/* Tab: Data Dasar */}
+          {formTab === "dasar" && (
+            <div className={styles.formGrid3}>
+              <label className={styles.formLabel} style={{ gridColumn: "1/-1" }}>
+                <span>Nama Lengkap *</span>
+                <input className={styles.formInput} value={form.name} onChange={f("name")} placeholder="Nama lengkap siswa" required />
+              </label>
+              <label className={styles.formLabel}>
+                <span>NIS *</span>
+                <input className={styles.formInput} value={form.nis} onChange={f("nis")} placeholder="Nomor Induk Siswa" required />
+              </label>
+              <label className={styles.formLabel}>
+                <span>NISN *</span>
+                <input className={styles.formInput} value={form.nisn} onChange={f("nisn")} placeholder="Nomor Induk Siswa Nasional" required />
+              </label>
+              <label className={styles.formLabel}>
+                <span>Kelas *</span>
+                <input className={styles.formInput} value={form.className} onChange={f("className")} placeholder="Cth: Kelas 7 / Kelas 8" required />
+              </label>
+              <label className={styles.formLabel}>
+                <span>Jenis Kelamin *</span>
+                <select className={styles.formInput} value={form.gender} onChange={f("gender")} required>
+                  <option value="L">Laki-laki</option>
+                  <option value="P">Perempuan</option>
+                </select>
+              </label>
+              <label className={styles.formLabel}>
+                <span>Status *</span>
+                <select className={styles.formInput} value={form.status} onChange={f("status")} required>
+                  <option value="Aktif">Aktif</option>
+                  <option value="Baru">Baru</option>
+                  <option value="Pindah">Pindah</option>
+                </select>
+              </label>
+              <label className={styles.formLabel}>
+                <span>Agama</span>
+                <select className={styles.formInput} value={form.agama ?? ""} onChange={f("agama")}>
+                  <option value="">— Pilih Agama —</option>
+                  {AGAMA_OPTIONS.map(a => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </label>
+            </div>
+          )}
+
+          {/* Tab: Wali Murid */}
+          {formTab === "wali" && (
+            <div className={styles.formGrid2}>
+              <label className={styles.formLabel} style={{ gridColumn: "1/-1" }}>
+                <span>Nama Wali Murid</span>
+                <input className={styles.formInput} value={form.waliMurid ?? ""} onChange={f("waliMurid")} placeholder="Nama lengkap wali murid" />
+              </label>
+              <label className={styles.formLabel}>
+                <span>Hubungan dengan Siswa</span>
+                <select className={styles.formInput} value={form.hubunganWali ?? ""} onChange={f("hubunganWali")}>
+                  <option value="">— Pilih Hubungan —</option>
+                  {HUBUNGAN_OPTIONS.map(h => <option key={h} value={h}>{h}</option>)}
+                </select>
+              </label>
+              <label className={styles.formLabel}>
+                <span>Telepon Wali</span>
+                <input className={styles.formInput} value={form.teleponWali ?? ""} onChange={f("teleponWali")} placeholder="Cth: 081234567890" />
+              </label>
+              <label className={styles.formLabel} style={{ gridColumn: "1/-1" }}>
+                <span>Pekerjaan Wali</span>
+                <input className={styles.formInput} value={form.pekerjaanWali ?? ""} onChange={f("pekerjaanWali")} placeholder="Cth: Pegawai Negeri, Wiraswasta" />
+              </label>
+            </div>
+          )}
+
+          {/* Tab: Data Tambahan */}
+          {formTab === "tambahan" && (
+            <div className={styles.formGrid2}>
+              <label className={styles.formLabel}>
+                <span>Tempat Lahir</span>
+                <input className={styles.formInput} value={form.tempatLahir ?? ""} onChange={f("tempatLahir")} placeholder="Cth: Klaten" />
+              </label>
+              <label className={styles.formLabel}>
+                <span>Tanggal Lahir</span>
+                <input className={styles.formInput} type="date" value={form.tanggalLahir ?? ""} onChange={f("tanggalLahir")} />
+              </label>
+              <label className={styles.formLabel} style={{ gridColumn: "1/-1" }}>
+                <span>Alamat Lengkap</span>
+                <textarea
+                  className={styles.formInput}
+                  value={form.alamat ?? ""}
+                  onChange={f("alamat")}
+                  placeholder="Alamat lengkap tempat tinggal siswa"
+                  rows={3}
+                  style={{ resize: "vertical" }}
+                />
+              </label>
+            </div>
+          )}
 
           <div className={styles.formActions}>
             <button
-              type="submit"
-              className={styles.primaryButton}
-              disabled={saving}
+              type="button"
+              onClick={() => { setForm(emptyStudent); setEditingId(null); setFormTab("dasar"); }}
+              className={styles.resetButton}
             >
-              {saving
-                ? "Menyimpan..."
-                : editingId
-                  ? "Update Siswa"
-                  : "Simpan Siswa"}
+              Reset
             </button>
-            {editingId ? (
-              <button
-                type="button"
-                className={styles.secondaryButton}
-                onClick={() => {
-                  setForm(emptyStudent);
-                  setEditingId(null);
-                }}
-              >
-                Batal
-              </button>
-            ) : null}
+            <button
+              type="submit"
+              disabled={saving}
+              className={styles.submitButton}
+            >
+              {saving ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Tambah Siswa"}
+            </button>
           </div>
         </form>
-        {error ? (
-          <p className={styles.portalFormError} role="alert">
-            {error}
-          </p>
-        ) : null}
+      </section>
+
+      {/* ── IMPORT EXCEL & DOWNLOAD TEMPLATE ─────────────────────── */}
+      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={() => setShowImportModal(true)}
+          style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #198caf", background: "#f0f9ff", color: "#198caf", cursor: "pointer", fontWeight: 600 }}
+        >
+          📥 Impor Excel
+        </button>
+        <button
+          type="button"
+          onClick={() => void downloadStudentTemplate()}
+          style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #16a34a", background: "#f0fdf4", color: "#16a34a", cursor: "pointer", fontWeight: 600 }}
+        >
+          📄 Unduh Template
+        </button>
       </div>
 
-      <div className={styles.panel}>
-        <div className={styles.panelTitle}>
-          <div>
-            <h3>Pendaftaran Siswa Menunggu Verifikasi</h3>
-            <p>
-              Tekan tombol Verifikasi untuk langsung mendaftarkan pendaftar menjadi siswa aktif.
-            </p>
-          </div>
-        </div>
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Pendaftar</th>
-              <th>Informasi</th>
-              <th>Data Induk Siswa</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
+      {/* ── TABEL DAFTAR SISWA ─────────────────────────────────── */}
+      {loading ? (
+        <p style={{ textAlign: "center", color: "#64748b" }}>Memuat data siswa...</p>
+      ) : students.length === 0 ? (
+        <p style={{ textAlign: "center", color: "#94a3b8", padding: 40 }}>Belum ada data siswa. Tambahkan siswa menggunakan form di atas.</p>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table className={styles.dataTable}>
+            <thead>
               <tr>
-                <td colSpan={4}>Memuat pendaftaran siswa...</td>
+                <th>No</th>
+                <th>Nama Siswa</th>
+                <th>NIS</th>
+                <th>NISN</th>
+                <th>Kelas</th>
+                <th>L/P</th>
+                <th>Wali Murid</th>
+                <th>Telepon Wali</th>
+                <th>Agama</th>
+                <th>Status</th>
+                <th>Aksi</th>
               </tr>
-            ) : null}
-            {!loading && registrations.length === 0 ? (
-              <tr>
-                <td colSpan={4}>Tidak ada pendaftaran yang menunggu verifikasi.</td>
-              </tr>
-            ) : null}
-            {registrations.map((registration) => {
-              const selectedAction =
-                selectedStudents[registration.email] ?? "__create__";
-              const isCreate = selectedAction === "__create__";
-              return (
-                <tr key={registration.email}>
-                  <td>
-                    <b>{registration.name}</b>
-                    <br />
-                    <span style={{ fontSize: "12px", color: "#64748b" }}>
-                      {registration.email}
-                    </span>
-                  </td>
-                  <td>
-                    <span style={{ fontWeight: 600 }}>
-                      {registration.registrationId || "—"}
-                    </span>
-                    <br />
-                    Kelas: <b>{registration.grade || "—"}</b>
-                    <br />
-                    Wali: {registration.parentName || "—"}
-                  </td>
-                  <td>
-                    <select
-                      aria-label={`Pilih tindakan verifikasi untuk ${registration.name}`}
-                      value={selectedAction}
-                      onChange={(event) =>
-                        setSelectedStudents((current) => ({
-                          ...current,
-                          [registration.email]: event.target.value,
-                        }))
-                      }
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: "6px",
-                        border: "1px solid #cbd5e1",
-                        fontSize: "13px",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      <option value="__create__">
-                        ✨ Buat data induk siswa baru (Otomatis)
-                      </option>
-                      {students
-                        .filter(
-                          (student) => !linkedStudentIds.includes(student.id),
-                        )
-                        .map((student) => (
-                          <option key={student.id} value={student.id}>
-                            Tautkan ke: {student.name} · {student.nis} · {student.className}
-                          </option>
-                        ))}
-                    </select>
-                  </td>
+            </thead>
+            <tbody>
+              {students.map((s, idx) => (
+                <tr key={s.id}>
+                  <td>{idx + 1}</td>
                   <td>
                     <button
                       type="button"
-                      disabled={approvingEmail === registration.email}
-                      onClick={() => void approveRegistration(registration)}
-                      style={{
-                        padding: "8px 18px",
-                        fontSize: "13px",
-                        fontWeight: 700,
-                        backgroundColor: "#2563eb",
-                        color: "#ffffff",
-                        border: "none",
-                        borderRadius: "6px",
-                        cursor: approvingEmail === registration.email ? "not-allowed" : "pointer",
-                        boxShadow: "0 1px 3px rgba(37, 99, 235, 0.25)",
-                        whiteSpace: "nowrap",
-                        transition: "background-color 0.15s ease",
-                      }}
+                      onClick={() => setViewingStudent(s)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#198caf", fontWeight: 600, textDecoration: "underline", padding: 0, textAlign: "left" }}
                     >
-                      {approvingEmail === registration.email
-                        ? "Memverifikasi..."
-                        : isCreate
-                          ? "Verifikasi"
-                          : "Verifikasi & Tautkan"}
+                      {s.name}
+                    </button>
+                  </td>
+                  <td>{s.nis}</td>
+                  <td>{s.nisn}</td>
+                  <td>{s.className}</td>
+                  <td>{s.gender === "L" ? "L" : "P"}</td>
+                  <td>{s.waliMurid || <span style={{ color: "#cbd5e1" }}>—</span>}</td>
+                  <td>{s.teleponWali || <span style={{ color: "#cbd5e1" }}>—</span>}</td>
+                  <td>{s.agama || <span style={{ color: "#cbd5e1" }}>—</span>}</td>
+                  <td>
+                    <span className={styles.statusBadge} style={{ background: s.status === "Aktif" ? "#dcfce7" : "#fef3c7", color: s.status === "Aktif" ? "#16a34a" : "#92400e" }}>
+                      {s.status}
+                    </span>
+                  </td>
+                  <td style={{ display: "flex", gap: 6 }}>
+                    <button
+                      type="button"
+                      onClick={() => setViewingStudent(s)}
+                      className={styles.editButton}
+                      title="Lihat detail"
+                    >
+                      👁
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(s)}
+                      className={styles.editButton}
+                      title="Edit data siswa"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(s.id)}
+                      className={styles.deleteButton}
+                      title="Hapus siswa"
+                    >
+                      🗑
                     </button>
                   </td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <div className={styles.panel}>
-        <div className={styles.panelTitle}>
-          <div>
-            <h3>Daftar Siswa</h3>
-            <p>Data siswa aktif dalam sistem</p>
-          </div>
+              ))}
+            </tbody>
+          </table>
+          <p style={{ fontSize: 12, color: "#94a3b8", marginTop: 8 }}>
+            Total: {students.length} siswa terdaftar
+          </p>
         </div>
+      )}
 
-        <table className={styles.dataTable}>
-          <thead>
-            <tr>
-              <th>Nama</th>
-              <th>NIS</th>
-              <th>NISN</th>
-              <th>Kelas</th>
-              <th>Status</th>
-              <th>Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={6}>Memuat data siswa...</td>
-              </tr>
-            ) : null}
-            {!loading && !error && students.length === 0 ? (
-              <tr>
-                <td colSpan={6}>Belum ada data siswa.</td>
-              </tr>
-            ) : null}
-            {students.map((student) => (
-              <tr key={student.id}>
-                <td>{student.name}</td>
-                <td>{student.nis}</td>
-                <td>{student.nisn}</td>
-                <td>{student.className}</td>
-                <td>
-                  <span className={styles.statusBadge}>{student.status}</span>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className={styles.tableAction}
-                    onClick={() => handleEdit(student)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.tableAction} ${styles.danger}`}
-                    onClick={() => handleDelete(student.id)}
-                  >
-                    Hapus
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {/* ── PENDAFTARAN MENUNGGU ─────────────────────────────────── */}
+      {registrations.length > 0 && (
+        <section style={{ marginTop: 40 }}>
+          <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>
+            ⏳ Pendaftaran Menunggu Persetujuan ({registrations.length})
+          </h3>
+          <div style={{ overflowX: "auto" }}>
+            <table className={styles.dataTable}>
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Nama</th>
+                  <th>Kelas</th>
+                  <th>Wali Murid</th>
+                  <th>Telepon</th>
+                  <th>NIS</th>
+                  <th>Tautkan ke Siswa</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registrations.map((reg) => (
+                  <tr key={reg.email}>
+                    <td>{reg.email}</td>
+                    <td>{reg.name}</td>
+                    <td>{reg.grade ?? "—"}</td>
+                    <td>{reg.parentName ?? "—"}</td>
+                    <td>{reg.phone ?? "—"}</td>
+                    <td>{reg.nis ?? "—"}</td>
+                    <td>
+                      {linkedStudentIds.includes(reg.registrationId ?? "") ? (
+                        <span style={{ color: "#16a34a", fontSize: 12 }}>✓ Tertaut</span>
+                      ) : (
+                        <select
+                          value={selectedStudents[reg.email] ?? ""}
+                          onChange={(e) => setSelectedStudents(prev => ({ ...prev, [reg.email]: e.target.value }))}
+                          style={{ padding: "4px 8px", borderRadius: 4, border: "1px solid #cbd5e1", fontSize: 12 }}
+                        >
+                          <option value="">— Pilih Siswa —</option>
+                          {students.map(s => (
+                            <option key={s.id} value={s.id}>{s.name} ({s.nis})</option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        disabled={approvingEmail === reg.email || !selectedStudents[reg.email]}
+                        onClick={() => void handleApproveRegistration(reg.email, selectedStudents[reg.email])}
+                        style={{ padding: "4px 12px", borderRadius: 4, background: "#16a34a", color: "#fff", border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600 }}
+                      >
+                        {approvingEmail === reg.email ? "Memproses..." : "Setujui"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
 
-      {/* MODAL IMPOR EXCEL SISWA */}
+      {/* ── MODAL IMPOR EXCEL ────────────────────────────────────── */}
       {showImportModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.5)",
-            zIndex: 1000,
-            display: "grid",
-            placeItems: "center",
-            padding: "16px",
-          }}
-        >
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: "12px",
-              width: "100%",
-              maxWidth: "760px",
-              padding: "24px",
-              boxShadow: "0 20px 25px -5px rgba(0,0,0,0.15)",
-              maxHeight: "90vh",
-              overflowY: "auto",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "16px",
-              }}
-            >
-              <div>
-                <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 800 }}>
-                  Impor Data Siswa via Excel / CSV
-                </h3>
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    color: "#64748b",
-                    fontSize: "13px",
-                  }}
-                >
-                  Unggah file Excel berisi data siswa untuk ditambahkan sekaligus ke master data siswa.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowImportModal(false)}
-                style={{
-                  background: "none",
-                  border: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                  color: "#64748b",
-                }}
-              >
-                ×
-              </button>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ background: "#fff", borderRadius: 12, padding: 32, width: "min(90vw, 680px)", maxHeight: "85vh", overflowY: "auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+              <h3 style={{ margin: 0, fontWeight: 700 }}>Impor Data Siswa dari Excel</h3>
+              <button type="button" onClick={() => { setShowImportModal(false); setImportRows([]); setImportFileName(""); }} style={{ background: "none", border: "none", fontSize: 20, cursor: "pointer" }}>×</button>
             </div>
 
-            {importError && (
-              <p
-                style={{
-                  color: "#b91c1c",
-                  background: "#fef2f2",
-                  padding: "10px 14px",
-                  borderRadius: "6px",
-                  fontSize: "13px",
-                  marginBottom: "14px",
-                }}
-              >
-                {importError}
-              </p>
-            )}
+            {importError && <p style={{ color: "#bd3b3b", fontSize: 13, marginBottom: 12 }}>⚠ {importError}</p>}
+            {importSuccess && <p style={{ color: "#16a34a", fontSize: 13, marginBottom: 12 }}>✓ {importSuccess}</p>}
 
-            {/* Area Upload File */}
-            <div
-              style={{
-                border: "2px dashed #cbd5e1",
-                borderRadius: "8px",
-                padding: "24px",
-                textAlign: "center",
-                background: "#f8fafc",
-                marginBottom: "16px",
-              }}
-            >
-              <input
-                type="file"
-                accept=".xlsx, .xls, .csv"
-                id="excelStudentInput"
-                style={{ display: "none" }}
-                onChange={handleExcelFileChange}
-              />
-              <label
-                htmlFor="excelStudentInput"
-                style={{
-                  display: "inline-block",
-                  padding: "10px 20px",
-                  background: "#2563eb",
-                  color: "#fff",
-                  borderRadius: "6px",
-                  fontWeight: 700,
-                  fontSize: "14px",
-                  cursor: "pointer",
-                }}
-              >
-                📁 Pilih File Excel / CSV
+            <div style={{ border: "2px dashed #cbd5e1", borderRadius: 8, padding: 24, textAlign: "center", marginBottom: 16 }}>
+              <input type="file" accept=".xlsx,.xls" onChange={(e) => void handleFileImport(e)} style={{ display: "none" }} id="excel-import" />
+              <label htmlFor="excel-import" style={{ cursor: "pointer", color: "#198caf", fontWeight: 600 }}>
+                📂 {importFileName || "Klik untuk pilih file Excel (.xlsx / .xls)"}
               </label>
-              <p
-                style={{
-                  marginTop: "10px",
-                  fontSize: "12px",
-                  color: "#64748b",
-                }}
-              >
-                {importFileName
-                  ? `File terpilih: ${importFileName}`
-                  : "Mendukung format .xlsx, .xls, .csv"}
-              </p>
-              <div style={{ marginTop: "8px" }}>
-                <button
-                  type="button"
-                  onClick={downloadStudentTemplate}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "#2563eb",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    textDecoration: "underline",
-                  }}
-                >
-                  📥 Belum punya template? Unduh Template Excel di sini
-                </button>
-              </div>
             </div>
 
-            {importLoading && (
-              <p style={{ textAlign: "center", color: "#64748b" }}>
-                Membaca dan memproses file Excel...
-              </p>
-            )}
+            {importLoading && <p style={{ textAlign: "center", color: "#64748b" }}>Membaca file Excel...</p>}
 
-            {/* Preview Data yang akan diimpor */}
             {importRows.length > 0 && (
-              <div style={{ marginBottom: "16px" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    marginBottom: "8px",
-                  }}
-                >
-                  <span style={{ fontSize: "13px", fontWeight: 700 }}>
-                    Pratinjau Data ({importRows.length} Siswa Terdeteksi):
-                  </span>
-                  <span style={{ fontSize: "12px", color: "#64748b" }}>
-                    Menampilkan maksimal 5 baris pertama
-                  </span>
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700 }}>Pratinjau ({importRows.length} siswa terdeteksi):</span>
+                  <span style={{ fontSize: 12, color: "#64748b" }}>Menampilkan maks. 5 baris pertama</span>
                 </div>
-                <div
-                  style={{
-                    maxHeight: "220px",
-                    overflowY: "auto",
-                    border: "1px solid #e2e8f0",
-                    borderRadius: "6px",
-                  }}
-                >
-                  <table
-                    className={styles.dataTable}
-                    style={{ margin: 0, fontSize: "12px" }}
-                  >
+                <div style={{ maxHeight: 220, overflowY: "auto", border: "1px solid #e2e8f0", borderRadius: 6 }}>
+                  <table className={styles.dataTable} style={{ margin: 0, fontSize: 12 }}>
                     <thead>
                       <tr>
-                        <th>#</th>
-                        <th>Nama Siswa</th>
-                        <th>NIS</th>
-                        <th>NISN</th>
-                        <th>Kelas</th>
-                        <th>L/P</th>
-                        <th>Status</th>
+                        <th>#</th><th>Nama</th><th>NIS</th><th>NISN</th><th>Kelas</th><th>L/P</th><th>Status</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {importRows.slice(0, 5).map((row, idx) => (
-                        <tr key={idx}>
-                          <td>{idx + 1}</td>
-                          <td>
-                            <b>{row.name}</b>
-                          </td>
+                      {importRows.slice(0, 5).map((row, i) => (
+                        <tr key={i}>
+                          <td>{i + 1}</td>
+                          <td><b>{row.name}</b></td>
                           <td>{row.nis}</td>
                           <td>{row.nisn || "—"}</td>
                           <td>{row.className}</td>
                           <td>{row.gender}</td>
-                          <td>
-                            <span className={styles.statusBadge}>
-                              {row.status}
-                            </span>
-                          </td>
+                          <td><span className={styles.statusBadge}>{row.status}</span></td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-                {importRows.length > 5 && (
-                  <p
-                    style={{
-                      fontSize: "12px",
-                      color: "#64748b",
-                      marginTop: "6px",
-                      textAlign: "right",
-                    }}
-                  >
-                    ...dan {importRows.length - 5} baris lainnya akan diimpor.
-                  </p>
-                )}
+                {importRows.length > 5 && <p style={{ fontSize: 12, color: "#64748b", marginTop: 6, textAlign: "right" }}>...dan {importRows.length - 5} baris lainnya akan diimpor.</p>}
               </div>
             )}
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: "10px",
-                marginTop: "16px",
-              }}
-            >
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
               <button
                 type="button"
-                onClick={() => {
-                  setShowImportModal(false);
-                  setImportRows([]);
-                  setImportFileName("");
-                }}
-                style={{
-                  padding: "8px 16px",
-                  borderRadius: "6px",
-                  border: "1px solid #cbd5e1",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
+                onClick={() => { setShowImportModal(false); setImportRows([]); setImportFileName(""); }}
+                style={{ padding: "8px 16px", borderRadius: 6, border: "1px solid #cbd5e1", background: "#fff", cursor: "pointer" }}
               >
                 Batal
               </button>
@@ -894,25 +735,9 @@ export function StudentManager() {
                 type="button"
                 disabled={importRows.length === 0 || importSaving}
                 onClick={() => void handleExecuteImport()}
-                style={{
-                  padding: "8px 20px",
-                  borderRadius: "6px",
-                  border: "none",
-                  background:
-                    importRows.length === 0 || importSaving
-                      ? "#94a3b8"
-                      : "#16a34a",
-                  color: "#fff",
-                  fontWeight: 700,
-                  cursor:
-                    importRows.length === 0 || importSaving
-                      ? "not-allowed"
-                      : "pointer",
-                }}
+                style={{ padding: "8px 20px", borderRadius: 6, border: "none", background: importRows.length === 0 || importSaving ? "#94a3b8" : "#16a34a", color: "#fff", fontWeight: 700, cursor: importRows.length === 0 || importSaving ? "not-allowed" : "pointer" }}
               >
-                {importSaving
-                  ? "Menyimpan Data..."
-                  : `Impor ${importRows.length} Data Siswa`}
+                {importSaving ? "Menyimpan..." : `Impor ${importRows.length} Data Siswa`}
               </button>
             </div>
           </div>

@@ -164,11 +164,23 @@ export function PortalShell({
               background: isTeacher
                 ? "linear-gradient(135deg, #10b981, #047857)"
                 : "linear-gradient(135deg, #3b82f6, #1d4ed8)",
+              cursor: "pointer",
             }}
+            onClick={() => router.push(isTeacher ? "/portal-guru/profil" : "/portal-siswa/profil")}
+            title="Buka Profil Saya"
+            role="button"
+            tabIndex={0}
           >
             {initials}
           </div>
-          <div className={styles.profile}>
+          <div
+            className={styles.profile}
+            style={{ cursor: "pointer" }}
+            onClick={() => router.push(isTeacher ? "/portal-guru/profil" : "/portal-siswa/profil")}
+            title="Buka Profil Saya"
+            role="button"
+            tabIndex={0}
+          >
             <b>{userName}</b>
             <small>{userSub}</small>
           </div>

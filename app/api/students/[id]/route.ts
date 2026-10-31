@@ -2,20 +2,23 @@ import { NextResponse } from "next/server";
 import { deleteStudent, updateStudent } from "@/lib/db";
 import { databaseErrorResponse } from "@/lib/database-response";
 
+const ALLOWED_FIELDS = [
+  "name", "nis", "nisn", "className", "gender", "status",
+  "tempatLahir", "tanggalLahir", "alamat", "agama",
+  "waliMurid", "teleponWali", "hubunganWali", "pekerjaanWali", "fotoUrl",
+];
+
 function isStudentUpdate(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const input = value as Record<string, unknown>;
-  const allowed = ["name", "nis", "nisn", "className", "gender", "status"];
-  return Object.entries(input).every(
-    ([key, field]) => {
-      if (!allowed.includes(key)) return false;
-      if (key === "gender") return field === "L" || field === "P";
-      if (key === "status") {
-        return ["Aktif", "Baru", "Pindah"].includes(String(field));
-      }
-      return typeof field === "string";
-    },
-  );
+  return Object.entries(input).every(([key, field]) => {
+    if (!ALLOWED_FIELDS.includes(key)) return false;
+    if (key === "gender") return field === "L" || field === "P" || field === null || field === "";
+    if (key === "status") {
+      return [undefined, "", "Aktif", "Baru", "Pindah"].includes(String(field));
+    }
+    return typeof field === "string" || field === null || field === undefined;
+  });
 }
 
 export async function PUT(

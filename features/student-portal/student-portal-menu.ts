@@ -42,6 +42,12 @@ export const studentPortalMenu: readonly StudentMenuItem[] = [
     icon: "ⓘ",
     description: "Melihat informasi, visi misi, & pengumuman sekolah",
   },
+  {
+    label: "Profil Saya",
+    href: "/portal-siswa/profil",
+    icon: "👤",
+    description: "Melihat dan mengelola profil akun siswa terdaftar",
+  },
 ] as const;
 
 export const teacherPortalMenu = [
@@ -52,4 +58,5 @@ export const teacherPortalMenu = [
   { label: "Kelas", href: "/portal-guru/kelas", icon: "▦" },
   { label: "Rapor Siswa", href: "/portal-guru/rapor", icon: "▧" },
   { label: "Mata Pelajaran", href: "/portal-guru/mata-pelajaran", icon: "◈" },
+  { label: "Profil Saya", href: "/portal-guru/profil", icon: "👤" },
 ] as const;

@@ -8,6 +8,7 @@ import styles from "../app/page.module.css";
 import { OfficialScheduleBoard } from "./official-schedule-board";
 import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
 import { StudentNilaiView, SUBJECTS_CURRICULUM } from "./student-nilai-view";
+import { PortalProfileView } from "./portal-profile-view";
 
 type PortalRole = "Siswa" | "Guru";
 type PortalRecord = { id: string; [key: string]: string | number };
@@ -25,6 +26,7 @@ const studentFeatures = [
   ["Nilai Siswa", "/portal-siswa/nilai", "▤"],
   ["Rapor Digital", "/portal-siswa/rapor", "▧"],
   ["Informasi Sekolah", "/portal-siswa/informasi-sekolah", "ℹ"],
+  ["Profil Saya", "/portal-siswa/profil", "👤"],
 ];
 
 const teacherFeatures = [
@@ -35,6 +37,7 @@ const teacherFeatures = [
   ["Input Nilai", "/portal-guru/nilai", "◷"],
   ["Rapor Siswa", "/portal-guru/rapor", "▧"],
   ["Mata Pelajaran", "/portal-guru/mata-pelajaran", "◈"],
+  ["Profil Saya", "/portal-guru/profil", "👤"],
 ];
 
 const featureInfo: Record<string, { title: string; resource: string }> = {
@@ -43,6 +46,7 @@ const featureInfo: Record<string, { title: string; resource: string }> = {
   nilai: { title: "Nilai Siswa", resource: "grades" },
   rapor: { title: "Rapor Digital", resource: "grades" },
   "informasi-sekolah": { title: "Informasi Sekolah", resource: "school-info" },
+  profil: { title: "Profil Saya", resource: "profil" },
   // Portal Guru only
   kelas: { title: "Kelas", resource: "classes" },
   kehadiran: { title: "Kehadiran", resource: "attendance" },
@@ -141,6 +145,7 @@ export function PortalWorkspace({
   );
 
   const isSchoolInfo = feature === "informasi-sekolah";
+  const isProfile = feature === "profil";
   const [isNilaiExpanded, setIsNilaiExpanded] = useState(feature === "nilai");
   const [selectedSubjectName, setSelectedSubjectName] = useState("Bahasa Inggris");
 
@@ -159,7 +164,7 @@ export function PortalWorkspace({
     async function loadData() {
       try {
         // School info page does not need data fetching
-        if (isSchoolInfo) {
+        if (isSchoolInfo || isProfile) {
           const sessionResponse = await fetch("/api/session");
           if (sessionResponse.ok) {
             setSession((await sessionResponse.json()) as PortalSession);
@@ -266,7 +271,7 @@ export function PortalWorkspace({
           </button>
         </div>
         <div className={styles.studentTopbarActions}>
-          <div className={styles.studentProfile}>
+          <div className={styles.studentProfile} style={{ cursor: "pointer" }} onClick={() => router.push(isTeacher ? "/portal-guru/profil" : "/portal-siswa/profil")} title="Buka Profil Saya">
             <span className={styles.studentAvatar}>
               {(session?.name || role).slice(0, 1).toUpperCase()}
             </span>
@@ -586,7 +591,9 @@ export function PortalWorkspace({
                 <p className={styles.portalFormError}>{error}</p>
               ) : null}
 
-              {isSchoolInfo ? (
+              {isProfile ? (
+                <PortalProfileView role={role} />
+              ) : isSchoolInfo ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Profil Sekolah */}
                   <div style={{ background: "#f8fafc", borderRadius: "10px", padding: "20px", border: "1px solid #e2e8f0" }}>

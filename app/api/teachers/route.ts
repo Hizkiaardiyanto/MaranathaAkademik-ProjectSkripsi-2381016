@@ -8,6 +8,16 @@ function isTeacherInput(value: unknown): value is {
   subject: string;
   phone: string;
   status?: string;
+  alamat?: string;
+  pendidikanTerakhir?: string;
+  jurusan?: string;
+  gelar?: string;
+  gender?: "L" | "P";
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  agama?: string;
+  email?: string;
+  statusKepegawaian?: string;
 } {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const input = value as Record<string, unknown>;

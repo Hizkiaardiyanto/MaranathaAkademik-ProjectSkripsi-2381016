@@ -2,17 +2,37 @@ import { NextResponse } from "next/server";
 import { deleteTeacher, updateTeacher } from "@/lib/db";
 import { databaseErrorResponse } from "@/lib/database-response";
 
+const ALLOWED_TEACHER_FIELDS = [
+  "name",
+  "nip",
+  "subject",
+  "phone",
+  "status",
+  "alamat",
+  "pendidikanTerakhir",
+  "jurusan",
+  "gelar",
+  "gender",
+  "tempatLahir",
+  "tanggalLahir",
+  "agama",
+  "email",
+  "statusKepegawaian",
+];
+
 function isTeacherUpdate(value: unknown): value is Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const input = value as Record<string, unknown>;
-  const allowed = ["name", "nip", "subject", "phone", "status"];
-  return Object.entries(input).every(
-    ([key, field]) =>
-      allowed.includes(key) &&
-      typeof field === "string" &&
-      (key !== "status" ||
-        ["Aktif", "Cuti", "Pensiun"].includes(field)),
-  );
+  return Object.entries(input).every(([key, field]) => {
+    if (!ALLOWED_TEACHER_FIELDS.includes(key)) return false;
+    if (key === "status") {
+      return field === undefined || ["Aktif", "Cuti", "Pensiun"].includes(String(field));
+    }
+    if (key === "gender") {
+      return field === null || field === undefined || field === "" || field === "L" || field === "P";
+    }
+    return typeof field === "string" || field === null || field === undefined;
+  });
 }
 
 export async function PUT(

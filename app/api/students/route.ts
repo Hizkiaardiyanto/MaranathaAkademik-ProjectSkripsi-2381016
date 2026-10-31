@@ -9,6 +9,15 @@ function isStudentInput(value: unknown): value is {
   className: string;
   gender: "L" | "P";
   status?: string;
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  alamat?: string;
+  agama?: string;
+  waliMurid?: string;
+  teleponWali?: string;
+  hubunganWali?: string;
+  pekerjaanWali?: string;
+  fotoUrl?: string;
 } {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const input = value as Record<string, unknown>;

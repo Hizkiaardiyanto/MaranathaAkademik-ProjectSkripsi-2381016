@@ -40,6 +40,16 @@ export type Student = {
   className: string;
   gender: "L" | "P";
   status: string;
+  // Data tambahan siswa
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  alamat?: string;
+  agama?: string;
+  waliMurid?: string;
+  teleponWali?: string;
+  hubunganWali?: string;
+  pekerjaanWali?: string;
+  fotoUrl?: string;
 };
 
 export type Teacher = {
@@ -49,6 +59,17 @@ export type Teacher = {
   subject: string;
   phone: string;
   status: string;
+  // Extended fields
+  alamat?: string;
+  pendidikanTerakhir?: string;
+  jurusan?: string;
+  gelar?: string;
+  gender?: "L" | "P";
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  agama?: string;
+  email?: string;
+  statusKepegawaian?: string;
 };
 
 type StudentRow = RowDataPacket & {
@@ -59,6 +80,15 @@ type StudentRow = RowDataPacket & {
   class_name: string;
   gender: "L" | "P";
   status: string;
+  tempat_lahir: string | null;
+  tanggal_lahir: string | null;
+  alamat: string | null;
+  agama: string | null;
+  wali_murid: string | null;
+  telepon_wali: string | null;
+  hubungan_wali: string | null;
+  pekerjaan_wali: string | null;
+  foto_url: string | null;
 };
 
 type TeacherRow = RowDataPacket & {
@@ -68,6 +98,16 @@ type TeacherRow = RowDataPacket & {
   subject: string;
   phone: string;
   status: string;
+  alamat: string | null;
+  pendidikan_terakhir: string | null;
+  jurusan: string | null;
+  gelar: string | null;
+  gender: "L" | "P" | null;
+  tempat_lahir: string | null;
+  tanggal_lahir: string | null;
+  agama: string | null;
+  email: string | null;
+  status_kepegawaian: string | null;
 };
 
 async function ensurePool() {
@@ -102,6 +142,15 @@ function mapStudent(row: StudentRow): Student {
     className: row.class_name,
     gender: row.gender,
     status: row.status,
+    tempatLahir: row.tempat_lahir ?? undefined,
+    tanggalLahir: row.tanggal_lahir ?? undefined,
+    alamat: row.alamat ?? undefined,
+    agama: row.agama ?? undefined,
+    waliMurid: row.wali_murid ?? undefined,
+    teleponWali: row.telepon_wali ?? undefined,
+    hubunganWali: row.hubungan_wali ?? undefined,
+    pekerjaanWali: row.pekerjaan_wali ?? undefined,
+    fotoUrl: row.foto_url ?? undefined,
   };
 }
 
@@ -113,6 +162,16 @@ function mapTeacher(row: TeacherRow): Teacher {
     subject: row.subject,
     phone: row.phone,
     status: row.status,
+    alamat: row.alamat ?? undefined,
+    pendidikanTerakhir: row.pendidikan_terakhir ?? undefined,
+    jurusan: row.jurusan ?? undefined,
+    gelar: row.gelar ?? undefined,
+    gender: (row.gender as "L" | "P") ?? undefined,
+    tempatLahir: row.tempat_lahir ?? undefined,
+    tanggalLahir: row.tanggal_lahir ?? undefined,
+    agama: row.agama ?? undefined,
+    email: row.email ?? undefined,
+    statusKepegawaian: row.status_kepegawaian ?? undefined,
   };
 }
 
@@ -136,7 +195,7 @@ export async function createStudent(input: Partial<Student>) {
   };
   const connection = await ensurePool();
   await connection.execute(
-    "INSERT INTO students (id, name, nis, nisn, class_name, gender, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO students (id, name, nis, nisn, class_name, gender, status, tempat_lahir, tanggal_lahir, alamat, agama, wali_murid, telepon_wali, hubungan_wali, pekerjaan_wali, foto_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     [
       student.id,
       student.name,
@@ -145,6 +204,15 @@ export async function createStudent(input: Partial<Student>) {
       student.className,
       student.gender,
       student.status,
+      input.tempatLahir?.trim() || null,
+      input.tanggalLahir || null,
+      input.alamat?.trim() || null,
+      input.agama?.trim() || null,
+      input.waliMurid?.trim() || null,
+      input.teleponWali?.trim() || null,
+      input.hubunganWali?.trim() || null,
+      input.pekerjaanWali?.trim() || null,
+      input.fotoUrl?.trim() || null,
     ],
   );
   return student;
@@ -168,7 +236,7 @@ export async function updateStudent(
     id,
   };
   await connection.execute(
-    "UPDATE students SET name = ?, nis = ?, nisn = ?, class_name = ?, gender = ?, status = ? WHERE id = ?",
+    "UPDATE students SET name = ?, nis = ?, nisn = ?, class_name = ?, gender = ?, status = ?, tempat_lahir = ?, tanggal_lahir = ?, alamat = ?, agama = ?, wali_murid = ?, telepon_wali = ?, hubungan_wali = ?, pekerjaan_wali = ?, foto_url = ? WHERE id = ?",
     [
       student.name,
       student.nis,
@@ -176,6 +244,15 @@ export async function updateStudent(
       student.className,
       student.gender,
       student.status,
+      input.tempatLahir?.trim() ?? current.tempat_lahir ?? null,
+      input.tanggalLahir ?? current.tanggal_lahir ?? null,
+      input.alamat?.trim() ?? current.alamat ?? null,
+      input.agama?.trim() ?? current.agama ?? null,
+      input.waliMurid?.trim() ?? current.wali_murid ?? null,
+      input.teleponWali?.trim() ?? current.telepon_wali ?? null,
+      input.hubunganWali?.trim() ?? current.hubungan_wali ?? null,
+      input.pekerjaanWali?.trim() ?? current.pekerjaan_wali ?? null,
+      input.fotoUrl?.trim() ?? current.foto_url ?? null,
       id,
     ],
   );
@@ -221,10 +298,21 @@ export async function createTeacher(input: Partial<Teacher>) {
     subject: input.subject?.trim() || "",
     phone: input.phone?.trim() || "",
     status: input.status?.trim() || "Aktif",
+    alamat: input.alamat?.trim() || undefined,
+    pendidikanTerakhir: input.pendidikanTerakhir?.trim() || undefined,
+    jurusan: input.jurusan?.trim() || undefined,
+    gelar: input.gelar?.trim() || undefined,
+    gender: input.gender || undefined,
+    tempatLahir: input.tempatLahir?.trim() || undefined,
+    tanggalLahir: input.tanggalLahir || undefined,
+    agama: input.agama?.trim() || undefined,
+    email: input.email?.trim() || undefined,
+    statusKepegawaian: input.statusKepegawaian?.trim() || "GTY",
   };
   const connection = await ensurePool();
   await connection.execute(
-    "INSERT INTO teachers (id, name, nip, subject, phone, status) VALUES (?, ?, ?, ?, ?, ?)",
+    `INSERT INTO teachers (id, name, nip, subject, phone, status, alamat, pendidikan_terakhir, jurusan, gelar, gender, tempat_lahir, tanggal_lahir, agama, email, status_kepegawaian)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       teacher.id,
       teacher.name,
@@ -232,6 +320,16 @@ export async function createTeacher(input: Partial<Teacher>) {
       teacher.subject,
       teacher.phone,
       teacher.status,
+      teacher.alamat ?? null,
+      teacher.pendidikanTerakhir ?? null,
+      teacher.jurusan ?? null,
+      teacher.gelar ?? null,
+      teacher.gender ?? null,
+      teacher.tempatLahir ?? null,
+      teacher.tanggalLahir ?? null,
+      teacher.agama ?? null,
+      teacher.email ?? null,
+      teacher.statusKepegawaian ?? "GTY",
     ],
   );
   return teacher;
@@ -255,13 +353,28 @@ export async function updateTeacher(
     id,
   };
   await connection.execute(
-    "UPDATE teachers SET name = ?, nip = ?, subject = ?, phone = ?, status = ? WHERE id = ?",
+    `UPDATE teachers SET 
+      name = ?, nip = ?, subject = ?, phone = ?, status = ?,
+      alamat = ?, pendidikan_terakhir = ?, jurusan = ?, gelar = ?,
+      gender = ?, tempat_lahir = ?, tanggal_lahir = ?, agama = ?,
+      email = ?, status_kepegawaian = ?
+     WHERE id = ?`,
     [
       teacher.name,
       teacher.nip,
       teacher.subject,
       teacher.phone,
       teacher.status,
+      input.alamat?.trim() ?? current.alamat ?? null,
+      input.pendidikanTerakhir?.trim() ?? current.pendidikan_terakhir ?? null,
+      input.jurusan?.trim() ?? current.jurusan ?? null,
+      input.gelar?.trim() ?? current.gelar ?? null,
+      input.gender ?? current.gender ?? null,
+      input.tempatLahir?.trim() ?? current.tempat_lahir ?? null,
+      input.tanggalLahir ?? current.tanggal_lahir ?? null,
+      input.agama?.trim() ?? current.agama ?? null,
+      input.email?.trim() ?? current.email ?? null,
+      input.statusKepegawaian?.trim() ?? current.status_kepegawaian ?? "GTY",
       id,
     ],
   );
