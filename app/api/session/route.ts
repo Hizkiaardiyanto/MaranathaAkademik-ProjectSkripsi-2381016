@@ -159,10 +159,27 @@ export async function PUT(request: Request) {
 
     if (acc.role === "Siswa") {
       const studentId = acc.student_id;
+
+      // Build update values — replace empty strings with null so COALESCE works correctly
+      const cleanStr = (v: string | null | undefined) =>
+        typeof v === "string" && v.trim() !== "" ? v.trim() : null;
+
+      const updateValues = [
+        cleanStr(body.alamat),
+        cleanStr(body.agama),
+        cleanStr(body.waliMurid),
+        cleanStr(body.teleponWali),
+        cleanStr(body.hubunganWali),
+        cleanStr(body.pekerjaanWali),
+        cleanStr(body.tempatLahir),
+        cleanStr(body.tanggalLahir),
+      ];
+
       if (studentId) {
+        // Update by student_id
         await pool.execute(
-          `UPDATE students SET 
-            alamat = COALESCE(?, alamat),
+          `UPDATE students SET
+            alamat = ?,
             agama = COALESCE(?, agama),
             wali_murid = COALESCE(?, wali_murid),
             telepon_wali = COALESCE(?, telepon_wali),
@@ -171,18 +188,35 @@ export async function PUT(request: Request) {
             tempat_lahir = COALESCE(?, tempat_lahir),
             tanggal_lahir = COALESCE(?, tanggal_lahir)
           WHERE id = ?`,
-          [
-            body.alamat ?? null,
-            body.agama ?? null,
-            body.waliMurid ?? null,
-            body.teleponWali ?? null,
-            body.hubunganWali ?? null,
-            body.pekerjaanWali ?? null,
-            body.tempatLahir ?? null,
-            body.tanggalLahir ?? null,
-            studentId,
-          ],
+          [...updateValues, studentId],
         );
+      } else if (acc.name) {
+        // Fallback: update by name if student_id is not linked yet
+        const [stuRows] = await pool.query<RowDataPacket[]>(
+          "SELECT id FROM students WHERE name = ? LIMIT 1",
+          [acc.name],
+        );
+        const stuId = stuRows[0]?.id;
+        if (stuId) {
+          // Also link the student_id to portal_accounts for future saves
+          await pool.execute(
+            "UPDATE portal_accounts SET student_id = ? WHERE email = ?",
+            [stuId, session.email],
+          );
+          await pool.execute(
+            `UPDATE students SET
+              alamat = ?,
+              agama = COALESCE(?, agama),
+              wali_murid = COALESCE(?, wali_murid),
+              telepon_wali = COALESCE(?, telepon_wali),
+              hubungan_wali = COALESCE(?, hubungan_wali),
+              pekerjaan_wali = COALESCE(?, pekerjaan_wali),
+              tempat_lahir = COALESCE(?, tempat_lahir),
+              tanggal_lahir = COALESCE(?, tanggal_lahir)
+            WHERE id = ?`,
+            [...updateValues, stuId],
+          );
+        }
       }
     } else if (acc.role === "Guru") {
       const teacherId = acc.teacher_id;

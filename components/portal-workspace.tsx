@@ -9,6 +9,7 @@ import { OfficialScheduleBoard } from "./official-schedule-board";
 import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
 import { StudentNilaiView, SUBJECTS_CURRICULUM } from "./student-nilai-view";
 import { PortalProfileView } from "./portal-profile-view";
+import { StudentPaymentView } from "./student-payment-view";
 
 type PortalRole = "Siswa" | "Guru";
 type PortalRecord = { id: string; [key: string]: string | number };
@@ -25,6 +26,7 @@ const studentFeatures = [
   ["Absensi Siswa", "/portal-siswa/absensi", "✓"],
   ["Nilai Siswa", "/portal-siswa/nilai", "▤"],
   ["Rapor Digital", "/portal-siswa/rapor", "▧"],
+  ["Administrasi & SPP", "/portal-siswa/administrasi", "💳"],
   ["Informasi Sekolah", "/portal-siswa/informasi-sekolah", "ℹ"],
   ["Profil Saya", "/portal-siswa/profil", "👤"],
 ];
@@ -45,6 +47,7 @@ const featureInfo: Record<string, { title: string; resource: string }> = {
   absensi: { title: "Absensi Siswa", resource: "attendance" },
   nilai: { title: "Nilai Siswa", resource: "grades" },
   rapor: { title: "Rapor Digital", resource: "grades" },
+  administrasi: { title: "Administrasi & SPP", resource: "payments" },
   "informasi-sekolah": { title: "Informasi Sekolah", resource: "school-info" },
   profil: { title: "Profil Saya", resource: "profil" },
   // Portal Guru only
@@ -146,6 +149,7 @@ export function PortalWorkspace({
 
   const isSchoolInfo = feature === "informasi-sekolah";
   const isProfile = feature === "profil";
+  const isAdministrasi = feature === "administrasi";
   const [isNilaiExpanded, setIsNilaiExpanded] = useState(feature === "nilai");
   const [selectedSubjectName, setSelectedSubjectName] = useState("Bahasa Inggris");
 
@@ -164,7 +168,7 @@ export function PortalWorkspace({
     async function loadData() {
       try {
         // School info page does not need data fetching
-        if (isSchoolInfo || isProfile) {
+        if (isSchoolInfo || isProfile || isAdministrasi) {
           const sessionResponse = await fetch("/api/session");
           if (sessionResponse.ok) {
             setSession((await sessionResponse.json()) as PortalSession);

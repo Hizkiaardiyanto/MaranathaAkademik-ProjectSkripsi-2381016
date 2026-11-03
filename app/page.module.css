@@ -3027,6 +3027,8 @@
     width: 100% !important;
     max-width: 100vw !important;
     overflow-x: hidden !important;
+    /* topbar is sticky on mobile, no padding-top needed */
+    padding-top: 0 !important;
   }
 
   .mainContent {
@@ -3043,6 +3045,8 @@
     max-width: 100vw !important;
     min-height: 100vh !important;
     overflow-x: hidden !important;
+    /* topbar is sticky on mobile (not fixed), so no offset needed */
+    padding-top: 0 !important;
   }
 
   .studentMain {

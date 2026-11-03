@@ -37,6 +37,12 @@ export const studentPortalMenu: readonly StudentMenuItem[] = [
     description: "Melihat rapor jika sudah tersedia secara digital",
   },
   {
+    label: "Administrasi & SPP",
+    href: "/portal-siswa/administrasi",
+    icon: "💳",
+    description: "Cek tagihan SPP dan status pembayaran sekolah",
+  },
+  {
     label: "Informasi Sekolah",
     href: "/portal-siswa/informasi-sekolah",
     icon: "ⓘ",

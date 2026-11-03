@@ -28,6 +28,7 @@ export function StudentPortalDashboard() {
   const [grades, setGrades] = useState<PortalRecord[]>([]);
   const [schedules, setSchedules] = useState<PortalRecord[]>([]);
   const [scheduleViewMode, setScheduleViewMode] = useState<"official" | "list">("official");
+  const [sppStatus, setSppStatus] = useState<string>("Lunas");
 
   const [dateLabel, setDateLabel] = useState("");
   useEffect(() => {
@@ -39,11 +40,12 @@ export function StudentPortalDashboard() {
 
     async function loadData() {
       try {
-        const [sessionRes, attendanceRes, gradesRes, scheduleRes] = await Promise.all([
+        const [sessionRes, attendanceRes, gradesRes, scheduleRes, paymentRes] = await Promise.all([
           fetch("/api/session"),
           fetch("/api/portal-data/attendance"),
           fetch("/api/portal-data/grades"),
           fetch("/api/portal-data/schedules"),
+          fetch("/api/portal-data/payments"),
         ]);
 
         if (sessionRes.ok && active) {
@@ -235,6 +237,43 @@ export function StudentPortalDashboard() {
               Status: Tersedia
             </small>
           </div>
+
+          <Link
+            href="/portal-siswa/administrasi"
+            style={{ textDecoration: "none" }}
+          >
+            <div
+              style={{
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "12px",
+                padding: "18px 20px",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.02)",
+                cursor: "pointer",
+                transition: "transform 0.15s, border-color 0.15s",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>
+                  Administrasi & SPP
+                </span>
+                <span style={{ fontSize: "16px" }}>💳</span>
+              </div>
+              <div
+                style={{
+                  fontSize: "20px",
+                  fontWeight: 800,
+                  color: sppStatus === "Lunas" ? "#16a34a" : "#ea580c",
+                  marginTop: "6px",
+                }}
+              >
+                {sppStatus === "Lunas" ? "✓ SPP Lunas" : "⏳ Menunggu Bayar"}
+              </div>
+              <small style={{ color: "#2563eb", fontSize: "12px", fontWeight: 600 }}>
+                Cek Rincian Tagihan →
+              </small>
+            </div>
+          </Link>
         </div>
 
         {/* 3. JADWAL PELAJARAN SISWA (LANGSUNG TAMPIL DATA SEPERTI PORTAL GURU) */}

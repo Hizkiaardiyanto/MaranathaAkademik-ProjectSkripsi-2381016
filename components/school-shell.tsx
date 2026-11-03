@@ -12,6 +12,7 @@ const navItems = [
   { label: "Dashboard", href: "/", icon: "⌂" },
   { label: "Data Siswa", href: "/siswa", icon: "♙" },
   { label: "Data Guru", href: "/guru", icon: "♟" },
+  { label: "Administrasi & SPP", href: "/administrasi", icon: "💳" },
   { label: "Manajemen Akun", href: "/manajemen-akun", icon: "👤" },
   { label: "Kelas", href: "/kelas", icon: "▦" },
   { label: "Mata Pelajaran", href: "/mata-pelajaran", icon: "◈" },
