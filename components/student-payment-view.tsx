@@ -120,6 +120,7 @@ export function StudentPaymentView() {
 
   const sppCurrent = data.statusSppBulanIni;
   const isCurrentMonthLunas = sppCurrent.status === "Lunas";
+  const nonSppPayments = data.payments.filter((p) => p.jenisPembayaran !== "SPP Bulanan");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -392,6 +393,178 @@ export function StudentPaymentView() {
             );
           })}
         </div>
+      </div>
+
+      {/* 3B. TAGIHAN SERAGAM, SARPRAS & ADMINISTRASI LAINNYA */}
+      <div
+        style={{
+          background: "#ffffff",
+          borderRadius: "14px",
+          padding: "22px 24px",
+          border: "1px solid #e2e8f0",
+        }}
+      >
+        <div
+          style={{
+            marginBottom: "16px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "10px",
+          }}
+        >
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: "16px", fontWeight: 800, color: "#0f172a" }}>
+              👕 Tagihan Seragam, Sarpras &amp; Administrasi Non-SPP
+            </h3>
+            <p style={{ margin: 0, fontSize: "13px", color: "#64748b" }}>
+              Status pembayaran perlengkapan seragam sekolah, batik, sarana prasarana, dan iuran kegiatan resmi.
+            </p>
+          </div>
+          <span
+            style={{
+              fontSize: "12px",
+              fontWeight: 700,
+              background: "#f1f5f9",
+              color: "#475569",
+              padding: "4px 10px",
+              borderRadius: "12px",
+            }}
+          >
+            {nonSppPayments.length} Tagihan Terdaftar
+          </span>
+        </div>
+
+        {nonSppPayments.length === 0 ? (
+          <div
+            style={{
+              padding: "24px",
+              textAlign: "center",
+              color: "#94a3b8",
+              background: "#f8fafc",
+              borderRadius: "10px",
+              border: "1px dashed #cbd5e1",
+            }}
+          >
+            Belum ada tagihan non-SPP untuk tahun ajaran ini.
+          </div>
+        ) : (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+              gap: "14px",
+            }}
+          >
+            {nonSppPayments.map((item) => {
+              const isLunas = item.status === "Lunas";
+              const isSeragam = item.jenisPembayaran.toLowerCase().includes("seragam");
+              const isSarpras =
+                item.jenisPembayaran.toLowerCase().includes("sarpras") ||
+                item.jenisPembayaran.toLowerCase().includes("gedung");
+              const icon = isSeragam ? "👕" : isSarpras ? "🏫" : "🎯";
+
+              return (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: "16px 18px",
+                    borderRadius: "12px",
+                    border: isLunas ? "1px solid #86efac" : "1px solid #fecaca",
+                    background: isLunas ? "#f0fdf4" : "#fff5f5",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                    }}
+                  >
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                      <span style={{ fontSize: "20px" }}>{icon}</span>
+                      <div>
+                        <b style={{ fontSize: "14px", color: "#0f172a", display: "block" }}>
+                          {item.jenisPembayaran}
+                        </b>
+                        <small style={{ fontSize: "11px", color: "#64748b" }}>
+                          Periode: {item.bulan}
+                        </small>
+                      </div>
+                    </div>
+                    <span
+                      style={{
+                        padding: "3px 9px",
+                        borderRadius: "12px",
+                        fontSize: "11px",
+                        fontWeight: 800,
+                        background: isLunas ? "#dcfce7" : "#fee2e2",
+                        color: isLunas ? "#166534" : "#991b1b",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {isLunas ? "✓ LUNAS" : "⏳ BELUM LUNAS"}
+                    </span>
+                  </div>
+
+                  <div
+                    style={{
+                      fontSize: "16px",
+                      fontWeight: 800,
+                      color: isLunas ? "#15803d" : "#b91c1c",
+                    }}
+                  >
+                    {formatRupiah(item.nominal)}
+                  </div>
+
+                  {item.keterangan && (
+                    <p style={{ margin: 0, fontSize: "12px", color: "#475569", lineHeight: 1.5 }}>
+                      {item.keterangan}
+                    </p>
+                  )}
+
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      borderTop: "1px solid rgba(0,0,0,0.06)",
+                      paddingTop: "8px",
+                      marginTop: "auto",
+                    }}
+                  >
+                    <small style={{ fontSize: "11px", color: "#64748b" }}>
+                      {isLunas ? `Tgl: ${item.tanggalBayar || "-"}` : "Harap selesaikan administrasi"}
+                    </small>
+                    {isLunas && (
+                      <button
+                        type="button"
+                        onClick={() => setReceiptPayment(item)}
+                        style={{
+                          background: "#ffffff",
+                          border: "1px solid #86efac",
+                          color: "#166534",
+                          padding: "4px 10px",
+                          borderRadius: "6px",
+                          fontSize: "11px",
+                          fontWeight: 700,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Kwitansi ↗
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* 4. TABEL RIWAYAT TRANSAKSI & KWITANSI */}

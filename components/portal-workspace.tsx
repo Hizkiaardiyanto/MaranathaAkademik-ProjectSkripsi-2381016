@@ -10,6 +10,7 @@ import { useSidebarCollapse } from "../lib/use-sidebar-collapse";
 import { StudentNilaiView, SUBJECTS_CURRICULUM } from "./student-nilai-view";
 import { PortalProfileView } from "./portal-profile-view";
 import { StudentPaymentView } from "./student-payment-view";
+import { StudentRaporView } from "./student-rapor-view";
 
 type PortalRole = "Siswa" | "Guru";
 type PortalRecord = { id: string; [key: string]: string | number };
@@ -597,6 +598,8 @@ export function PortalWorkspace({
 
               {isProfile ? (
                 <PortalProfileView role={role} />
+              ) : isAdministrasi ? (
+                <StudentPaymentView />
               ) : isSchoolInfo ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {/* Profil Sekolah */}
@@ -655,6 +658,12 @@ export function PortalWorkspace({
                     </table>
                   </div>
                 </div>
+              ) : feature === "rapor" && !isTeacher ? (
+                <StudentRaporView
+                  studentName={session?.name}
+                  studentGrade={session?.grade}
+                  dbRecords={records}
+                />
               ) : feature === "nilai" && !isTeacher ? (
                 <StudentNilaiView
                   selectedSubjectName={selectedSubjectName}

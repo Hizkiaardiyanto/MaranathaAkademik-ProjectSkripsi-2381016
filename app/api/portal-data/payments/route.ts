@@ -55,7 +55,11 @@ export async function GET() {
     const payments = allPayments.filter((p) => {
       if (studentId && p.studentId === studentId) return true;
       if (nis && p.nis === nis) return true;
-      if (studentName && p.namaSiswa.toLowerCase() === studentName.toLowerCase()) return true;
+      if (studentName) {
+        const sLower = studentName.toLowerCase();
+        const pLower = p.namaSiswa.toLowerCase();
+        if (sLower === pLower || sLower.includes(pLower) || pLower.includes(sLower)) return true;
+      }
       return false;
     });
 
@@ -66,12 +70,18 @@ export async function GET() {
     const currentBulanTag = `${currentMonthName} ${currentYear}`;
 
     // Look for SPP for this month or most recent SPP
-    const currentMonthSPP = payments.find(
-      (p) =>
-        p.jenisPembayaran === "SPP Bulanan" &&
-        p.bulan.toLowerCase().includes(currentMonthName.toLowerCase()) &&
-        p.bulan.includes(String(currentYear)),
-    );
+    const currentMonthSPP =
+      payments.find(
+        (p) =>
+          p.jenisPembayaran === "SPP Bulanan" &&
+          p.bulan.toLowerCase().includes(currentMonthName.toLowerCase()) &&
+          p.bulan.includes(String(currentYear)),
+      ) ||
+      payments.find(
+        (p) =>
+          p.jenisPembayaran === "SPP Bulanan" &&
+          p.bulan.toLowerCase().includes(currentMonthName.toLowerCase()),
+      );
 
     // Compute metrics
     let totalDibayar = 0;

@@ -14,10 +14,11 @@ type PaymentSummary = {
 
 const JENIS_TAGIHAN_OPTIONS = [
   "SPP Bulanan",
+  "Seragam Sekolah & Batik",
   "Uang Pangkal / Sarpras",
   "Uang Kegiatan & PGM",
   "Uang Ujian & Asesmen",
-  "Seragam & Buku Pelajaran",
+  "Buku Pelajaran & Modul",
   "Lainnya",
 ];
 

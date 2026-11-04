@@ -51,13 +51,30 @@ function teacherScheduleMatches(
   schedule: AcademicRecord,
   session: SessionClaims,
 ) {
-  const scheduleTeacher = text(schedule, "guru");
-  const scheduleSubject = text(schedule, "mapel");
-  return (
-    normalized(scheduleTeacher) === normalized(session.name || "") &&
-    (!session.subject ||
-      normalized(scheduleSubject) === normalized(session.subject))
-  );
+  const scheduleTeacher = normalized(text(schedule, "guru"));
+  const scheduleSubject = normalized(text(schedule, "mapel"));
+  const sessionName = normalized(session.name || "");
+  const sessionSubject = normalized(session.subject || "");
+
+  // Match if teacher name directly matches, or includes
+  const nameMatch =
+    scheduleTeacher === sessionName ||
+    (sessionName.length >= 3 && scheduleTeacher.includes(sessionName)) ||
+    (scheduleTeacher.length >= 3 && sessionName.includes(scheduleTeacher));
+
+  // Match if subject matches
+  const subjectMatch =
+    !sessionSubject ||
+    scheduleSubject === sessionSubject ||
+    scheduleSubject.includes(sessionSubject) ||
+    sessionSubject.includes(scheduleSubject);
+
+  if (nameMatch && subjectMatch) return true;
+
+  // Fallback: If teacher has assigned subject (e.g. Matematika), match any schedule for that subject
+  if (sessionSubject && subjectMatch) return true;
+
+  return false;
 }
 
 function studentClassMatches(
@@ -191,12 +208,23 @@ export async function listPortalRecords(
       ),
     );
   }
-  return records.filter(
-    (record) =>
-      (session.studentId && record.studentId
-        ? record.studentId === session.studentId
-        : normalized(text(record, "nama")) === normalized(session.name || "")),
-  );
+  return records.filter((record) => {
+    if (session.studentId && record.studentId && record.studentId === session.studentId) {
+      return true;
+    }
+    const recordNama = normalized(text(record, "nama"));
+    const sessionName = normalized(session.name || "");
+    if (
+      recordNama &&
+      sessionName &&
+      (recordNama === sessionName ||
+        recordNama.includes(sessionName) ||
+        sessionName.includes(recordNama))
+    ) {
+      return true;
+    }
+    return false;
+  });
 }
 
 export async function createPortalRecord(
@@ -212,14 +240,17 @@ export async function createPortalRecord(
   const student = students.find(
     (item) =>
       normalized(item.name) === normalized(studentName) &&
-      normalized(item.className) === normalized(className),
-  );
+      (normalized(item.className) === normalized(className) ||
+        normalized(item.className).includes(normalized(className)) ||
+        normalized(className).includes(normalized(item.className))),
+  ) || students.find((item) => normalized(item.name) === normalized(studentName));
   const schedules = await listRecords("schedules");
   const assignedSchedule = schedules.find(
     (item) =>
       teacherScheduleMatches(item, session) &&
-      normalized(text(item, "kelas")) === normalized(className),
-  );
+      (normalized(text(item, "kelas")) === normalized(className) ||
+        normalized(text(item, "kelas")).includes(normalized(className))),
+  ) || schedules.find((item) => teacherScheduleMatches(item, session));
   if (!subject || !assignedSchedule) {
     return { error: "Tidak ditemukan jadwal mengajar untuk kelas dan mata pelajaran ini." };
   }

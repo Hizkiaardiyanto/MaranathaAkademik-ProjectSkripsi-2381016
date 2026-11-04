@@ -77,6 +77,13 @@ export function StudentPortalDashboard() {
             setSchedules(sch);
           }
         }
+
+        if (paymentRes.ok && active) {
+          const payJson = await paymentRes.json();
+          if (payJson?.statusSppBulanIni?.status) {
+            setSppStatus(payJson.statusSppBulanIni.status);
+          }
+        }
       } catch {
         // Fallback gracefully
       } finally {
